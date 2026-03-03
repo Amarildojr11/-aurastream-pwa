@@ -6,7 +6,7 @@
     <title>AuraStream WEB — Industrial Dashboard</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#060b14">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/icon.png">
@@ -22,165 +22,238 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap');
 
         :root {
-            --bg-base: #020617;
-            --bg-surface: #0f172a;
-            --bg-surface-elevated: rgba(30, 41, 59, 0.7);
-            --primary: #10b981;
-            --primary-glow: rgba(16, 185, 129, 0.2);
-            --accent: #38bdf8;
-            --error: #ef4444;
-            --error-glow: rgba(239, 68, 68, 0.3);
-            --warning: #f59e0b;
+            /* Paleta inspirada na print */
+            --bg-app: #050910;
+            --bg-panel: #0a101d;
+            --bg-card: #121927;
+            --border-color: #1e2d3d;
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: rgba(51, 65, 85, 0.5);
-            --glass-blur: blur(12px);
+            --text-muted: #64748b;
+            
+            /* Cores Semânticas */
+            --primary: #00E676;
+            --error: #ff4757;
+            --warning: #ffb300;
+            --accent: #00BCD4;
+            
             --radius-md: 12px;
-            --radius-lg: 20px;
+            --radius-lg: 16px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body {
-            background-color: var(--bg-base);
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.05), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.05), transparent 25%);
+            background-color: var(--bg-app);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow-x: hidden;
         }
 
-        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 24px; padding-bottom: 120px; max-width: 1400px; }
+        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 16px; padding-bottom: 90px; max-width: 1200px; }
 
-        /* ── Efeitos e Animações ── */
-        @keyframes pulse-border {
-            0% { border-color: var(--error); box-shadow: 0 0 10px var(--error-glow); }
-            50% { border-color: rgba(239, 68, 68, 0.2); box-shadow: 0 0 2px transparent; }
-            100% { border-color: var(--error); box-shadow: 0 0 10px var(--error-glow); }
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ── Componentes UI Comuns ── */
+        /* ── Componentes UI Básicos ── */
         .glass-panel {
-            background: var(--bg-surface-elevated);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+        }
+
+        .led-indicator {
+            width: 10px; height: 10px; border-radius: 50%;
+            display: inline-block;
+        }
+        .led-green { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+        .led-red { background: var(--error); box-shadow: 0 0 8px var(--error); }
+        .led-yellow { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+        
+        @keyframes pulse-alarm {
+            0% { border-color: var(--error); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            70% { border-color: var(--error); box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
+            100% { border-color: var(--error); box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
         }
 
         /* ── Login / Setup ── */
-        .auth-box {
-            margin-top: 10vh;
-            padding: 40px 32px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .auth-logo { width: 64px; height: 64px; margin-bottom: 20px; border-radius: 16px; box-shadow: 0 4px 20px var(--primary-glow); }
-        .auth-box h2 { font-weight: 800; font-size: 26px; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .auth-box { margin-top: 10vh; padding: 40px 32px; max-width: 400px; text-align: center; }
+        .auth-logo { width: 64px; height: 64px; margin-bottom: 20px; border-radius: 12px; }
+        .auth-box h2 { font-weight: 800; font-size: 24px; margin-bottom: 8px; }
         .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
-        
         .input-field {
             width: 100%; padding: 16px; margin-bottom: 16px;
-            background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border);
+            background: #0f1522; border: 1px solid var(--border-color);
             color: var(--text-main); font-size: 15px; border-radius: var(--radius-md);
-            transition: all 0.3s;
         }
-        .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
-        
+        .input-field:focus { outline: none; border-color: var(--primary); }
         .btn-primary {
             width: 100%; padding: 16px; background: var(--primary); color: #000;
             font-weight: 700; font-size: 15px; border: none; border-radius: var(--radius-md);
-            cursor: pointer; transition: all 0.2s;
+            cursor: pointer; transition: 0.2s;
         }
-        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); margin-top: 12px; }
-        .btn-ghost:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); margin-top: 12px; }
 
-        /* ── Header App ── */
-        header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
-        .brand { display: flex; align-items: center; gap: 12px; }
-        .brand img { width: 40px; border-radius: 10px; }
-        .brand h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-        .brand h1 span { color: var(--primary); }
-        
-        .status-badge {
-            padding: 8px 16px; border-radius: 30px; font-size: 12px; font-weight: 700;
-            display: flex; align-items: center; gap: 8px; border: 1px solid var(--border);
-            background: rgba(15, 23, 42, 0.6);
-        }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
-        .status-badge.online .dot { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
-        .status-badge.offline .dot { background: var(--error); box-shadow: 0 0 8px var(--error); }
-
-        /* ── Dashboard Grid Avançado ── */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            width: 100%;
-        }
-        .metric-card {
-            padding: 24px;
+        /* ── Dashboard Principal (Estilo Print) ── */
+        .dash-window {
             display: flex;
             flex-direction: column;
-            gap: 12px; /* Reduzido o gap para acomodar a meta-info */
-            transition: transform 0.3s ease;
-            animation: fadeIn 0.4s ease forwards;
+            gap: 20px;
+            padding: 24px;
+        }
+
+        .dash-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .dash-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .dash-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .dash-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; font-weight: 600; text-transform: uppercase; }
+        .mac-dots { display: flex; gap: 6px; }
+        .mac-dots .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .mac-dots .dot:nth-child(1) { background: #ff5f56; }
+        .mac-dots .dot:nth-child(2) { background: #ffbd2e; }
+        .mac-dots .dot:nth-child(3) { background: #27c93f; }
+
+        /* ── Secção do Gráfico ── */
+        .chart-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .chart-live { color: var(--primary); display: flex; align-items: center; gap: 6px; }
+        .main-chart-wrapper {
+            width: 100%;
+            height: 280px;
             position: relative;
-            overflow: hidden;
         }
-        .metric-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            opacity: 0.5;
-        }
-        .metric-card.alarm-active {
-            animation: pulse-border 1.5s infinite;
-        }
-        .metric-card.alarm-active::before { background: var(--error); opacity: 1; }
 
-        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .card-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .card-indicator { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); }
+        /* ── Secção dos Cards ── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
         
-        .card-body { display: flex; align-items: baseline; gap: 8px; }
-        .card-value { font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 700; color: var(--text-main); letter-spacing: -1px; }
-        .card-unit { font-size: 16px; color: var(--accent); font-weight: 600; }
-        
-        .card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-top: -4px; }
-        .card-range { font-style: italic; color: var(--text-muted); transition: color 0.3s; }
-        .card-total { font-weight: 700; color: #38bdf8; /* Cyan vibrante para totalizadores */ }
-
-        .chart-container { width: 100%; height: 80px; margin-top: auto; }
-
-        /* ── Outras Tabs ── */
-        .app-tab { display: none; width: 100%; animation: fadeIn 0.3s ease; }
-        .app-tab.active { display: block; }
-
-        /* ── Alertas ── */
-        .alarm-list { display: flex; flex-direction: column; gap: 12px; }
-        .alarm-item {
-            padding: 16px 20px; border-left: 4px solid var(--error);
-            display: flex; flex-direction: column; gap: 6px;
+        .scada-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            transition: all 0.3s ease;
         }
-        .alarm-time { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
-        .alarm-msg { font-size: 15px; font-weight: 600; }
+        .scada-card.alarming {
+            animation: pulse-alarm 1.5s infinite;
+            background: rgba(255, 71, 87, 0.05);
+        }
 
-        /* ── Bottom Nav ── */
+        .scada-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .scada-device-info {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .scada-tag-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #d1d5db;
+            margin-bottom: 8px;
+        }
+        .scada-value-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: flex-end;
+            gap: 6px;
+            margin-top: auto;
+        }
+        .scada-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .scada-unit {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        
+        .scada-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            margin-top: -4px;
+        }
+        .scada-range { color: var(--text-muted); font-style: italic; }
+        .scada-total { color: var(--accent); font-weight: 600; }
+
+        /* ── Footer do Dashboard ── */
+        .dash-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .footer-stats { display: flex; gap: 16px; }
+        .stat-item { display: flex; align-items: center; gap: 6px; }
+
+        /* ── Outras Tabs & Nav ── */
+        .app-tab { display: none; width: 100%; }
+        .app-tab.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 72px;
-            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
+            background: rgba(10, 16, 29, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; z-index: 1000;
             padding-bottom: env(safe-area-inset-bottom);
         }
         .nav-item {
@@ -189,17 +262,31 @@
         }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 20px; }
-        .nav-text { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+        .nav-text { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
 
-        /* ── Notification Banner ── */
+        /* ── Alarmes List ── */
+        .alarm-item {
+            background: var(--bg-card); padding: 16px; border-radius: var(--radius-md);
+            border: 1px solid var(--border-color); border-left: 4px solid var(--error);
+            margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;
+        }
+        .alarm-time { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted); }
+        .alarm-msg { font-size: 14px; font-weight: 600; }
+
         #notification-banner {
             background: linear-gradient(135deg, var(--warning), #f59e0b);
             color: #000; padding: 12px 24px; border-radius: var(--radius-md); font-size: 13px; font-weight: 700;
-            cursor: pointer; text-align: center; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3); display: none; margin-bottom: 20px; width: 100%;
+            cursor: pointer; text-align: center; display: none; margin-bottom: 16px; width: 100%;
         }
 
         @media (max-width: 768px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
+            .cards-grid { grid-template-columns: 1fr 1fr; }
+            .main-chart-wrapper { height: 200px; }
+            .scada-val { font-size: 26px; }
+            .dash-controls { display: none; } /* Oculta os botões mac no mobile para poupar espaço */
+        }
+        @media (max-width: 480px) {
+            .cards-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -209,8 +296,8 @@
     <div id="login-screen" class="screen-container">
         <div class="auth-box glass-panel">
             <img src="/icon.png" alt="Logo" class="auth-logo">
-            <h2>AuraStream <span style="color: var(--accent);">WEB</span></h2>
-            <p>Acesso Seguro ao SCADA Industrial</p>
+            <h2>AuraStream</h2>
+            <p>Industrial Control System</p>
             <input type="email" id="email" class="input-field" placeholder="E-mail corporativo" required>
             <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
             <button class="btn-primary" onclick="login()">Autenticar</button>
@@ -232,38 +319,68 @@
 
     <!-- ═══════════════════ APP PRINCIPAL ═══════════════════ -->
     <div id="main-app" class="screen-container">
-        <header>
-            <div class="brand">
-                <img src="/icon.png" alt="Logo">
-                <h1>Aura<span>Stream</span></h1>
-            </div>
-            <div id="plant-status" class="status-badge offline">
-                <div class="dot"></div>
-                <span id="status-text">A LIGAR...</span>
-            </div>
-        </header>
-
+        
         <div id="notification-banner" onclick="pedirPermissaoEGerarToken(true)">
             🔔 ATIVAR NOTIFICAÇÕES DE ALARME NESTE DISPOSITIVO
         </div>
 
         <!-- Tab: Dashboard -->
         <div id="tab-dashboard" class="app-tab active">
-            <div class="dashboard-grid" id="dashboard">
-                <div style="text-align: center; color: var(--text-muted); width: 100%; padding: 60px 20px; grid-column: 1 / -1;">
-                    <div style="font-size: 32px; margin-bottom: 16px; opacity: 0.5;">📡</div>
-                    A aguardar sincronização de telemetria...
+            <div class="glass-panel dash-window">
+                
+                <!-- Header -->
+                <div class="dash-header">
+                    <div class="dash-title">
+                        <div class="led-indicator led-green" id="led-status"></div>
+                        AuraStream Dashboard
+                    </div>
+                    <div class="dash-controls">
+                        <span class="dash-subtitle">Monitoramento em Tempo Real</span>
+                        <div class="mac-dots">
+                            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Gráfico Central -->
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <span>Tendência — Últimos Ciclos</span>
+                        <span class="chart-live"><div class="led-indicator led-green"></div> AO VIVO</span>
+                    </div>
+                    <div class="main-chart-wrapper">
+                        <canvas id="mainTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Grid de Variáveis -->
+                <div class="cards-grid" id="cards-container">
+                    <div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">
+                        A aguardar sincronização de telemetria da fábrica...
+                    </div>
+                </div>
+
+                <!-- Footer Stats -->
+                <div class="dash-footer">
+                    <div class="footer-stats">
+                        <span class="stat-item"><div class="led-indicator led-green"></div> <span id="lbl-status-text">A LIGAR...</span></span>
+                        <span class="stat-item" id="lbl-alarm-count" style="color: var(--warning); display:none;"><div class="led-indicator led-yellow"></div> <span>0 ALERTAS</span></span>
+                    </div>
+                    <div class="footer-time" id="lbl-cycle-time">
+                        Ciclo #-- | --:--:--
+                    </div>
+                </div>
+
             </div>
         </div>
 
         <!-- Tab: Alarmes -->
         <div id="tab-alarms" class="app-tab">
             <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
-                <h3 style="font-size: 20px;">Registo de Eventos</h3>
-                <button onclick="limparAlarmes()" style="background: transparent; color: var(--error); border: 1px solid var(--error); padding: 6px 12px; border-radius: 8px; cursor: pointer;">Limpar Histórico</button>
+                <h3 style="font-size: 18px;">Registo de Eventos</h3>
+                <button onclick="limparAlarmes()" style="background: transparent; color: var(--error); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 8px; cursor: pointer;">Limpar Histórico</button>
             </div>
-            <div id="alarms-list" class="alarm-list">
+            <div id="alarms-list">
                 <div class="glass-panel" style="padding: 40px; text-align: center; color: var(--text-muted);">
                     Nenhum alarme crítico registado. A operação decorre normalmente.
                 </div>
@@ -273,19 +390,19 @@
         <!-- Tab: Configurações -->
         <div id="tab-settings" class="app-tab">
             <div class="glass-panel" style="padding: 32px; max-width: 500px; margin: 0 auto;">
-                <h3 style="margin-bottom: 24px; font-size: 20px;">Definições de Conta</h3>
+                <h3 style="margin-bottom: 24px; font-size: 18px;">Definições de Conta</h3>
                 
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 16px;">
                     <span style="color: var(--text-muted);">Operador</span>
                     <strong id="user-email-display">...</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 32px;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 32px;">
                     <span style="color: var(--text-muted);">Fábrica Conectada</span>
                     <strong id="plant-id-display" style="color: var(--accent); font-family: 'JetBrains Mono', monospace;">...</strong>
                 </div>
 
-                <button class="btn-primary btn-ghost" onclick="desvincularPlanta()" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3);">Trocar de Equipamento</button>
-                <button class="btn-primary btn-ghost" onclick="logout()" style="color: var(--error); border-color: rgba(239, 68, 68, 0.3);">Terminar Sessão</button>
+                <button class="btn-primary btn-ghost" onclick="desvincularPlanta()" style="color: var(--warning); border-color: var(--border-color);">Trocar de Equipamento</button>
+                <button class="btn-primary btn-ghost" onclick="logout()" style="color: var(--error); border-color: var(--border-color);">Terminar Sessão</button>
             </div>
         </div>
 
@@ -331,9 +448,17 @@
         }
 
         let currentPlantId = null;
-        const chartInstances = {};
-        const chartHistories = {};
-        const MAX_DATA_POINTS = 20; // Pontos no gráfico (sparkline)
+        
+        // Configuração Global do Gráfico Único
+        let mainChartInstance = null;
+        const MAX_POINTS = 30;
+        let globalChartLabels = [];
+        let tagDatasets = {}; // Mapeia tag_name -> config do dataset
+        let cycleCount = 0;
+
+        // Paleta de cores premium para as linhas/cards (como na imagem)
+        const TAG_COLORS = ['#00E676', '#00BCD4', '#FF9800', '#9C27B0', '#FDD835', '#F44336', '#3b82f6'];
+        let colorIndex = 0;
 
         // ═══════════════════ LÓGICA DE UI & TABS ═══════════════════
         function mostrarTela(tela) {
@@ -358,6 +483,7 @@
                         currentPlantId = snapshot.val();
                         document.getElementById('plant-id-display').innerText = currentPlantId;
                         mostrarTela(document.getElementById('main-app'));
+                        initMainChart();
                         iniciarMonitoramento(currentPlantId);
                         if (Notification.permission !== "granted") {
                             document.getElementById('notification-banner').style.display = "block";
@@ -423,157 +549,199 @@
             });
         }
 
-        // ═══════════════════ CONFIGURAÇÃO DOS GRÁFICOS (CHART.JS) ═══════════════════
-        Chart.defaults.color = '#94a3b8';
-        Chart.defaults.font.family = "'Inter', sans-serif";
-
-        function createChart(canvasId, colorHex) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
+        // ═══════════════════ INICIALIZAÇÃO DO GRÁFICO (Chart.js) ═══════════════════
+        function initMainChart() {
+            if (mainChartInstance) return;
             
-            // Criar gradiente sob a linha
-            const gradient = ctx.createLinearGradient(0, 0, 0, 80);
-            gradient.addColorStop(0, colorHex + '66'); // 40% opacidade
-            gradient.addColorStop(1, colorHex + '00'); // 0% opacidade
+            Chart.defaults.color = '#64748b';
+            Chart.defaults.font.family = "'Inter', sans-serif";
 
-            return new Chart(ctx, {
+            const ctx = document.getElementById('mainTrendChart').getContext('2d');
+            mainChartInstance = new Chart(ctx, {
                 type: 'line',
-                data: { labels: [], datasets: [{ data: [], borderColor: colorHex, backgroundColor: gradient, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 }] },
+                data: {
+                    labels: globalChartLabels,
+                    datasets: [] // Preenchido dinamicamente
+                },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false, beginAtZero: false } // Auto escala focada no valor
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 0 }, // Para não travar no SCADA
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
                     },
-                    animation: { duration: 0 } // Desliga animação para performance SCADA
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, weight: '600' } }
+                        },
+                        tooltip: { backgroundColor: 'rgba(10, 16, 29, 0.9)', titleColor: '#fff', bodyFont: { family: "'JetBrains Mono', monospace" }, padding: 12, cornerRadius: 8, borderColor: '#1e2d3d', borderWidth: 1 }
+                    },
+                    scales: {
+                        x: { grid: { display: false, drawBorder: false }, ticks: { maxTicksLimit: 8 } },
+                        y: { grid: { color: '#1e2d3d', drawBorder: false }, beginAtZero: true }
+                    }
                 }
             });
         }
 
         // ═══════════════════ MOTOR DE DADOS SCADA ═══════════════════
         function iniciarMonitoramento(plantId) {
-            const dashboard = document.getElementById('dashboard');
+            const dashboardContainer = document.getElementById('cards-container');
+            const lblStatus = document.getElementById('lbl-status-text');
+            const ledStatus = document.getElementById('led-status');
             
             // LER STATUS ONLINE
             dbRef.ref('plants/' + plantId + '/online').on('value', (snap) => {
                 const isOnline = snap.val();
-                const badge = document.getElementById('plant-status');
-                badge.className = "status-badge " + (isOnline ? "online" : "offline");
-                document.getElementById('status-text').innerText = (isOnline ? "SISTEMA ONLINE" : "SISTEMA OFFLINE");
+                if (isOnline) {
+                    lblStatus.innerText = "ONLINE - COMUNICAÇÃO ATIVA";
+                    ledStatus.className = "led-indicator led-green";
+                } else {
+                    lblStatus.innerText = "OFFLINE - SEM CONEXÃO";
+                    ledStatus.className = "led-indicator led-red";
+                }
             });
 
             // LER TAGS EM TEMPO REAL
             dbRef.ref('plants/' + plantId + '/tags').on('value', (snap) => {
                 const tags = snap.val();
                 if (!tags) return;
-                if (dashboard.innerHTML.includes("aguardar")) dashboard.innerHTML = '';
+                
+                if (dashboardContainer.innerHTML.includes("aguardar")) dashboardContainer.innerHTML = '';
 
-                const nowTime = new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                cycleCount++;
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+                document.getElementById('lbl-cycle-time').innerText = `Ciclo #${cycleCount} | ${timeStr}`;
+
+                // Atualiza Labels do X-Axis global
+                globalChartLabels.push(timeStr);
+                if (globalChartLabels.length > MAX_POINTS) globalChartLabels.shift();
+
+                let activeAlarmsCount = 0;
 
                 for (const [tagName, data] of Object.entries(tags)) {
-                    let id = "tag_" + tagName.replace(/[^a-zA-Z0-9]/g, "_");
+                    let id = "card_" + tagName.replace(/[^a-zA-Z0-9]/g, "_");
                     let card = document.getElementById(id);
                     
                     let val = typeof data === 'object' ? (data.value || 0) : data;
                     let unit = typeof data === 'object' && data.unit ? data.unit : "";
                     let isAlarming = typeof data === 'object' && data.is_alarming;
                     
-                    // Verificação de Limites e Totalizadores do Firebase
+                    if(isAlarming) activeAlarmsCount++;
+
                     let min = typeof data === 'object' && data.min !== undefined ? data.min : null;
                     let max = typeof data === 'object' && data.max !== undefined ? data.max : null;
                     let total = typeof data === 'object' && data.total !== undefined ? data.total : null;
                     
                     let displayTitle = tagName.replace(/_/g, " ");
 
-                    // Inicializar histórico
-                    if (!chartHistories[id]) chartHistories[id] = { labels: [], data: [] };
+                    // Gestão Dinâmica do Dataset do Gráfico e Cor
+                    if (!tagDatasets[tagName]) {
+                        const assignedColor = TAG_COLORS[colorIndex % TAG_COLORS.length];
+                        colorIndex++;
+                        
+                        tagDatasets[tagName] = {
+                            color: assignedColor,
+                            dataArray: []
+                        };
+                        
+                        mainChartInstance.data.datasets.push({
+                            label: `${displayTitle} (${unit})`,
+                            data: tagDatasets[tagName].dataArray,
+                            borderColor: assignedColor,
+                            backgroundColor: assignedColor,
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.4 // Curva suave
+                        });
+                    }
+
+                    // Atualiza Dados do Gráfico
+                    const dArray = tagDatasets[tagName].dataArray;
+                    dArray.push(val);
+                    if (dArray.length > MAX_POINTS) dArray.shift();
 
                     // Construir Card se não existir
                     if (!card) {
                         card = document.createElement("div");
-                        card.className = "glass-panel metric-card";
+                        card.className = "scada-card";
                         card.id = id;
+                        // Define a cor da borda com base na cor atribuída no gráfico
+                        card.style.borderLeft = `4px solid ${tagDatasets[tagName].color}`;
+                        
                         card.innerHTML = `
-                            <div class="card-header">
-                                <span class="card-title">${displayTitle}</span>
-                                <span class="card-indicator" id="${id}_ind">Normal</span>
+                            <div class="scada-card-header">
+                                <span class="scada-device-info">EDGE NODE • SCADA</span>
+                                <div class="led-indicator" id="${id}_led" style="background-color: ${tagDatasets[tagName].color}; box-shadow: 0 0 8px ${tagDatasets[tagName].color};"></div>
                             </div>
-                            <div class="card-body">
-                                <span class="card-value" id="${id}_val">0.00</span>
-                                <span class="card-unit">${unit}</span>
+                            <div class="scada-tag-name">${displayTitle}</div>
+                            
+                            <div class="scada-meta">
+                                <span class="scada-range" id="${id}_range"></span>
+                                <span class="scada-total" id="${id}_total"></span>
                             </div>
-                            <div class="card-meta">
-                                <span class="card-range" id="${id}_range"></span>
-                                <span class="card-total" id="${id}_total"></span>
-                            </div>
-                            <div class="chart-container">
-                                <canvas id="chart_${id}"></canvas>
+
+                            <div class="scada-value-row">
+                                <span class="scada-val" id="${id}_val" style="color: ${tagDatasets[tagName].color};">0.00</span>
+                                <span class="scada-unit">${unit}</span>
                             </div>
                         `;
-                        dashboard.appendChild(card);
-                        // Iniciar o Gráfico para esta variável (Verde por padrão, ou vermelho se em alarme)
-                        chartInstances[id] = createChart("chart_" + id, isAlarming ? "#ef4444" : "#10b981");
+                        dashboardContainer.appendChild(card);
                     }
 
-                    // Atualizar UI - Valor principal
+                    // Atualizar Valores no DOM do Card
                     document.getElementById(id + "_val").innerText = Number(val).toFixed(2);
                     
-                    // Atualizar Informação de Faixa (Limites)
+                    // Tratamento visual de Alarme no Card
                     const rangeEl = document.getElementById(id + "_range");
-                    if (min !== null && max !== null) {
-                        if (isAlarming) {
-                            rangeEl.innerText = "▲ FORA DA FAIXA ▲";
-                            rangeEl.style.color = "var(--error)";
-                            rangeEl.style.fontWeight = "bold";
-                            rangeEl.style.fontStyle = "normal";
-                        } else {
-                            rangeEl.innerText = `Faixa: ${min} — ${max} ${unit}`;
-                            rangeEl.style.color = "var(--text-muted)";
-                            rangeEl.style.fontWeight = "normal";
-                            rangeEl.style.fontStyle = "italic";
+                    const ledEl = document.getElementById(id + "_led");
+                    
+                    if (isAlarming) {
+                        card.classList.add('alarming');
+                        ledEl.className = "led-indicator led-red";
+                        if (min !== null && max !== null) {
+                            rangeEl.innerHTML = `<span style="color: var(--error); font-weight:bold; font-style:normal;">▲ FORA DA FAIXA ▲</span>`;
                         }
                     } else {
-                        rangeEl.innerText = "";
+                        card.classList.remove('alarming');
+                        ledEl.className = "led-indicator";
+                        ledEl.style.backgroundColor = tagDatasets[tagName].color;
+                        ledEl.style.boxShadow = `0 0 8px ${tagDatasets[tagName].color}`;
+                        if (min !== null && max !== null) {
+                            rangeEl.innerText = `Faixa: ${min} — ${max} ${unit}`;
+                        } else {
+                            rangeEl.innerText = "";
+                        }
                     }
 
-                    // Atualizar Totalizador
+                    // Totalizador
                     const totalEl = document.getElementById(id + "_total");
                     if (total !== null) {
                         totalEl.innerText = `Total: ${Number(total).toFixed(2)} ${unit}`;
                     } else {
                         totalEl.innerText = "";
                     }
-                    
-                    const ind = document.getElementById(id + "_ind");
-                    if (isAlarming) {
-                        card.classList.add('alarm-active');
-                        ind.innerText = "ALERTA";
-                        ind.style.color = "var(--error)";
-                        ind.style.background = "var(--error-glow)";
-                        chartInstances[id].data.datasets[0].borderColor = "#ef4444"; // Muda cor da linha para vermelho
-                    } else {
-                        card.classList.remove('alarm-active');
-                        ind.innerText = "Operacional";
-                        ind.style.color = "var(--primary)";
-                        ind.style.background = "var(--primary-glow)";
-                        chartInstances[id].data.datasets[0].borderColor = "#10b981"; // Volta para verde
-                    }
-
-                    // Atualizar Gráfico (Limita a MAX_DATA_POINTS)
-                    chartHistories[id].labels.push(nowTime);
-                    chartHistories[id].data.push(val);
-                    if (chartHistories[id].labels.length > MAX_DATA_POINTS) {
-                        chartHistories[id].labels.shift();
-                        chartHistories[id].data.shift();
-                    }
-                    
-                    chartInstances[id].data.labels = chartHistories[id].labels;
-                    chartInstances[id].data.datasets[0].data = chartHistories[id].data;
-                    chartInstances[id].update();
                 }
+
+                // Atualiza rodapé de alarmes
+                const lblAlarms = document.getElementById('lbl-alarm-count');
+                if(activeAlarmsCount > 0) {
+                    lblAlarms.style.display = 'flex';
+                    lblAlarms.querySelector('span').innerText = `${activeAlarmsCount} ALERTA${activeAlarmsCount > 1 ? 'S' : ''}`;
+                } else {
+                    lblAlarms.style.display = 'none';
+                }
+
+                // Redesenha o Gráfico Único
+                mainChartInstance.update();
             });
 
-            // LER ALARMES
+            // LER ALARMES (Para a Tab de Registos)
             dbRef.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(20).on('value', (snap) => {
                 const list = document.getElementById('alarms-list');
                 if (snap.exists()) {
@@ -582,7 +750,7 @@
                         const al = child.val();
                         const time = new Date(al.timestamp).toLocaleString('pt-PT');
                         html = `
-                            <div class="glass-panel alarm-item">
+                            <div class="alarm-item">
                                 <span class="alarm-time">${time}</span>
                                 <span class="alarm-msg">${al.tag.replace(/_/g, ' ')}: ${Number(al.value).toFixed(2)}</span>
                                 <span style="font-size:13px; color:var(--text-muted)">${al.message}</span>
@@ -601,7 +769,10 @@
                 dbRef.ref('alarms/' + currentPlantId).remove();
             }
         }
-        function pararMonitoramento() {}
+        
+        function pararMonitoramento() {
+            // Lógica de paragem de listeners se necessário futuramente
+        }
     </script>
 </body>
 </html>
