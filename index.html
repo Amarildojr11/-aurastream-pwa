@@ -283,7 +283,7 @@
             .cards-grid { grid-template-columns: 1fr 1fr; }
             .main-chart-wrapper { height: 200px; }
             .scada-val { font-size: 26px; }
-            .dash-controls { display: none; } /* Oculta os botões mac no mobile para poupar espaço */
+            .dash-controls { display: none; }
         }
         @media (max-width: 480px) {
             .cards-grid { grid-template-columns: 1fr; }
@@ -295,7 +295,7 @@
     <!-- ═══════════════════ TELA DE LOGIN ═══════════════════ -->
     <div id="login-screen" class="screen-container">
         <div class="auth-box glass-panel">
-            <img src="/icon.png" alt="Logo" class="auth-logo">
+            <img src="/icon.png" alt="Logo" class="auth-logo" onerror="this.style.display='none'">
             <h2>AuraStream</h2>
             <p>Industrial Control System</p>
             <input type="email" id="email" class="input-field" placeholder="E-mail corporativo" required>
@@ -345,7 +345,7 @@
                 <!-- Gráfico Central -->
                 <div class="chart-section">
                     <div class="chart-header">
-                        <span>Tendência — Últimos Ciclos</span>
+                        <span>Tendência — Últimos 60 Minutos</span>
                         <span class="chart-live"><div class="led-indicator led-green"></div> AO VIVO</span>
                     </div>
                     <div class="main-chart-wrapper">
@@ -451,8 +451,10 @@
         
         // Configuração Global do Gráfico Único
         let mainChartInstance = null;
-        const MAX_POINTS = 30;
+        const TIME_WINDOW_MS = 60 * 60 * 1000; // 1 Hora em milissegundos
+        const MAX_SAFE_POINTS = 3600; // Proteção para o navegador não travar com demasiados dados
         let globalChartLabels = [];
+        let globalChartTimestamps = []; // Novo array para controlo exato do tempo
         let tagDatasets = {}; // Mapeia tag_name -> config do dataset
         let cycleCount = 0;
 
@@ -617,11 +619,14 @@
                 const timeStr = now.toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
                 document.getElementById('lbl-cycle-time').innerText = `Ciclo #${cycleCount} | ${timeStr}`;
 
-                // Atualiza Labels do X-Axis global
+                // Atualiza Labels e Timestamps globais
                 globalChartLabels.push(timeStr);
-                if (globalChartLabels.length > MAX_POINTS) globalChartLabels.shift();
+                globalChartTimestamps.push(now.getTime());
 
                 let activeAlarmsCount = 0;
+                
+                // Mapeia quais tags vieram neste ciclo
+                const tagsDesteCiclo = new Set(Object.keys(tags));
 
                 for (const [tagName, data] of Object.entries(tags)) {
                     let id = "card_" + tagName.replace(/[^a-zA-Z0-9]/g, "_");
@@ -639,14 +644,17 @@
                     
                     let displayTitle = tagName.replace(/_/g, " ");
 
-                    // Gestão Dinâmica do Dataset do Gráfico e Cor
+                    // Criação do Dataset no Gráfico (Se for uma Tag nova)
                     if (!tagDatasets[tagName]) {
                         const assignedColor = TAG_COLORS[colorIndex % TAG_COLORS.length];
                         colorIndex++;
                         
+                        // Corrige o alinhamento preenchendo os ciclos passados com "null"
+                        const paddingArray = new Array(Math.max(0, globalChartLabels.length - 1)).fill(null);
+                        
                         tagDatasets[tagName] = {
                             color: assignedColor,
-                            dataArray: []
+                            dataArray: paddingArray
                         };
                         
                         mainChartInstance.data.datasets.push({
@@ -657,21 +665,15 @@
                             borderWidth: 2,
                             pointRadius: 0,
                             pointHoverRadius: 4,
-                            tension: 0.4 // Curva suave
+                            tension: 0.4
                         });
                     }
-
-                    // Atualiza Dados do Gráfico
-                    const dArray = tagDatasets[tagName].dataArray;
-                    dArray.push(val);
-                    if (dArray.length > MAX_POINTS) dArray.shift();
 
                     // Construir Card se não existir
                     if (!card) {
                         card = document.createElement("div");
                         card.className = "scada-card";
                         card.id = id;
-                        // Define a cor da borda com base na cor atribuída no gráfico
                         card.style.borderLeft = `4px solid ${tagDatasets[tagName].color}`;
                         
                         card.innerHTML = `
@@ -725,6 +727,33 @@
                         totalEl.innerText = `Total: ${Number(total).toFixed(2)} ${unit}`;
                     } else {
                         totalEl.innerText = "";
+                    }
+                }
+
+                // Sincroniza e insere todos os valores no Gráfico
+                for (const tagName in tagDatasets) {
+                    if (tagsDesteCiclo.has(tagName)) {
+                        let data = tags[tagName];
+                        let val = typeof data === 'object' ? (data.value || 0) : data;
+                        tagDatasets[tagName].dataArray.push(val);
+                    } else {
+                        // Se a tag não foi enviada neste ciclo, preenchemos com null para o gráfico não dessincronizar
+                        tagDatasets[tagName].dataArray.push(null);
+                    }
+                }
+
+                // ─── JANELA DE TEMPO (1 HORA) ───
+                // Limpa pontos antigos calculando a diferença entre o tempo real de agora e do ponto inserido.
+                const limiteDeTempo = now.getTime() - TIME_WINDOW_MS;
+                
+                while (globalChartTimestamps.length > 0 && 
+                      (globalChartTimestamps[0] < limiteDeTempo || globalChartTimestamps.length > MAX_SAFE_POINTS)) {
+                    
+                    globalChartTimestamps.shift();
+                    globalChartLabels.shift();
+                    
+                    for (const tagName in tagDatasets) {
+                        tagDatasets[tagName].dataArray.shift();
                     }
                 }
 
