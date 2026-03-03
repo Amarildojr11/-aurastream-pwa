@@ -1,494 +1,201 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AuraStream WEB — Industrial</title>
+    <title>AuraStream WEB — Industrial Dashboard</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a0f1a">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/icon.png">
     <link rel="icon" type="image/png" href="/icon.png">
 
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    
+    <!-- Chart.js para Gráficos em Tempo Real -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
         :root {
-            --bg-primary: #0a0f1a;
-            --bg-secondary: #111827;
-            --bg-card: #1a2332;
-            --bg-card-hover: #1f2b3d;
-            --bg-input: #0f1724;
-            --primary: #00E676;
-            --primary-dim: rgba(0, 230, 118, 0.15);
-            --primary-glow: rgba(0, 230, 118, 0.3);
-            --accent: #00BCD4;
-            --accent-dim: rgba(0, 188, 212, 0.15);
-            --text-primary: #f0f4f8;
-            --text-secondary: #8899aa;
-            --text-muted: #5a6a7a;
-            --error: #ff4757;
-            --error-dim: rgba(255, 71, 87, 0.15);
-            --warning: #ffa726;
-            --warning-dim: rgba(255, 167, 38, 0.15);
-            --success: #00E676;
-            --border: #1e2d3d;
-            --border-focus: #00E676;
-            --nav-bg: rgba(17, 24, 39, 0.95);
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
-            --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
-            --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
-            --radius-sm: 8px;
+            --bg-base: #020617;
+            --bg-surface: #0f172a;
+            --bg-surface-elevated: rgba(30, 41, 59, 0.7);
+            --primary: #10b981;
+            --primary-glow: rgba(16, 185, 129, 0.2);
+            --accent: #38bdf8;
+            --error: #ef4444;
+            --error-glow: rgba(239, 68, 68, 0.3);
+            --warning: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(51, 65, 85, 0.5);
+            --glass-blur: blur(12px);
             --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
+            --radius-lg: 20px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         
         body {
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.05), transparent 25%);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            -webkit-font-smoothing: antialiased;
         }
 
-        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 20px; padding-bottom: 100px; }
+        .screen-container { display: none; flex-direction: column; align-items: center; width: 100%; padding: 24px; padding-bottom: 120px; max-width: 1400px; }
 
-        /* ── Animações ── */
-        @keyframes pulse-alarm {
-            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.6); }
-            50% { box-shadow: 0 0 0 12px rgba(255, 71, 87, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+        /* ── Efeitos e Animações ── */
+        @keyframes pulse-border {
+            0% { border-color: var(--error); box-shadow: 0 0 10px var(--error-glow); }
+            50% { border-color: rgba(239, 68, 68, 0.2); box-shadow: 0 0 2px transparent; }
+            100% { border-color: var(--error); box-shadow: 0 0 10px var(--error-glow); }
         }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-        @keyframes breathe {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-        .alarm-active {
-            animation: pulse-alarm 1.5s infinite;
-            border-color: var(--error) !important;
-            background: linear-gradient(135deg, rgba(255,71,87,0.12), rgba(255,71,87,0.05)) !important;
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Componentes UI Comuns ── */
+        .glass-panel {
+            background: var(--bg-surface-elevated);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         /* ── Login / Setup ── */
         .auth-box {
-            margin-top: 8vh;
-            background: var(--bg-card);
-            padding: 48px 32px;
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-lg);
+            margin-top: 10vh;
+            padding: 40px 32px;
             width: 100%;
-            max-width: 420px;
+            max-width: 400px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
         }
-        .auth-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
-            background-size: 200% 100%;
-            animation: shimmer 3s linear infinite;
-        }
-        .auth-logo {
-            width: 72px;
-            height: 72px;
-            border-radius: 18px;
-            margin: 0 auto 16px;
-            display: block;
-            filter: drop-shadow(0 4px 12px rgba(0,230,118,0.3));
-        }
-        .auth-box h2 {
-            color: var(--text-primary);
-            margin: 0 0 4px 0;
-            font-weight: 800;
-            font-size: 24px;
-            letter-spacing: -0.5px;
-        }
-        .auth-box .subtitle {
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-bottom: 32px;
-            font-weight: 400;
-        }
+        .auth-logo { width: 64px; height: 64px; margin-bottom: 20px; border-radius: 16px; box-shadow: 0 4px 20px var(--primary-glow); }
+        .auth-box h2 { font-weight: 800; font-size: 26px; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+        
         .input-field {
-            width: 100%;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            background: var(--bg-input);
-            color: var(--text-primary);
-            font-size: 15px;
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            width: 100%; padding: 16px; margin-bottom: 16px;
+            background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border);
+            color: var(--text-main); font-size: 15px; border-radius: var(--radius-md);
+            transition: all 0.3s;
         }
-        .input-field:focus {
-            border-color: var(--border-focus);
-            box-shadow: 0 0 0 3px var(--primary-dim);
-        }
-        .input-field::placeholder { color: var(--text-muted); }
+        .input-field:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
         
         .btn-primary {
-            width: 100%;
-            padding: 14px;
-            background: var(--primary);
-            color: #0a0f1a;
-            font-weight: 700;
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-size: 15px;
-            font-family: 'Inter', sans-serif;
-            margin-top: 8px;
-            transition: transform 0.15s, box-shadow 0.3s;
-            letter-spacing: 0.3px;
+            width: 100%; padding: 16px; background: var(--primary); color: #000;
+            font-weight: 700; font-size: 15px; border: none; border-radius: var(--radius-md);
+            cursor: pointer; transition: all 0.2s;
         }
-        .btn-primary:active { transform: scale(0.98); }
-        .btn-primary:hover { box-shadow: 0 4px 16px var(--primary-glow); }
-        .btn-secondary { background: var(--accent); }
-        .btn-danger { background: var(--error); color: white; }
-        .btn-ghost { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
-        .btn-ghost:hover { background: var(--bg-card); color: var(--text-primary); }
+        .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); margin-top: 12px; }
+        .btn-ghost:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
 
-        .auth-footer {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 28px;
-            font-style: italic;
-        }
-
-        /* ── App Principal ── */
-        #main-app { max-width: 1200px; padding: 16px; padding-bottom: 100px; width: 100%; }
-
-        header {
-            text-align: center;
-            margin-bottom: 24px;
-            width: 100%;
-        }
-        .header-brand {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 8px;
-        }
-        .header-brand img {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-        }
-        .header-brand h1 {
-            color: var(--text-primary);
-            margin: 0;
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        .header-brand h1 span { color: var(--primary); }
-
+        /* ── Header App ── */
+        header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img { width: 40px; border-radius: 10px; }
+        .brand h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+        .brand h1 span { color: var(--primary); }
+        
         .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
+            padding: 8px 16px; border-radius: 30px; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; gap: 8px; border: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.6);
         }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-        .online {
-            background: var(--primary-dim);
-            color: var(--primary);
-            border: 1px solid rgba(0,230,118,0.3);
-        }
-        .online .status-dot { background: var(--primary); animation: breathe 2s infinite; }
-        .offline {
-            background: var(--error-dim);
-            color: var(--error);
-            border: 1px solid rgba(255,71,87,0.3);
-        }
-        .offline .status-dot { background: var(--error); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+        .status-badge.online .dot { background: var(--primary); box-shadow: 0 0 8px var(--primary); }
+        .status-badge.offline .dot { background: var(--error); box-shadow: 0 0 8px var(--error); }
 
-        /* ── Tabs ── */
-        .app-tab { display: none; width: 100%; animation: fadeInUp 0.3s ease; }
-        .app-tab.active { display: block; }
-
-        /* ── Dashboard Grid ── */
+        /* ── Dashboard Grid Avançado ── */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            width: 100%;
         }
-        .card {
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: 20px 16px;
-            border: 1px solid var(--border);
-            text-align: center;
+        .metric-card {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: transform 0.3s ease;
+            animation: fadeIn 0.4s ease forwards;
             position: relative;
-            transition: border-color 0.3s, transform 0.15s, box-shadow 0.3s;
             overflow: hidden;
         }
-        .card::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--accent), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
+        .metric-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0.5;
         }
-        .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
-        .card:hover::after { opacity: 1; }
+        .metric-card.alarm-active {
+            animation: pulse-border 1.5s infinite;
+        }
+        .metric-card.alarm-active::before { background: var(--error); opacity: 1; }
 
-        .tag-title {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-        .tag-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 30px;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: -1px;
-            transition: font-size 0.2s ease;
-        }
-        .tag-unit {
-            font-size: 14px;
-            margin-left: 3px;
-            color: var(--text-muted);
-            font-weight: 400;
-        }
-        .tag-range {
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid var(--border);
-            font-style: italic;
-        }
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .card-title { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .card-indicator { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); }
+        
+        .card-body { display: flex; align-items: baseline; gap: 8px; }
+        .card-value { font-family: 'JetBrains Mono', monospace; font-size: 38px; font-weight: 700; color: var(--text-main); letter-spacing: -1px; }
+        .card-unit { font-size: 16px; color: var(--accent); font-weight: 600; }
+        
+        .chart-container { width: 100%; height: 80px; margin-top: auto; }
 
-        /* ── Alarmes ── */
-        .alarms-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding: 0 4px;
-        }
-        .alarms-header h3 {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .btn-clear-alarms {
-            background: var(--error-dim);
-            color: var(--error);
-            border: 1px solid rgba(255,71,87,0.3);
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: background 0.2s;
-        }
-        .btn-clear-alarms:hover { background: rgba(255,71,87,0.25); }
+        /* ── Outras Tabs ── */
+        .app-tab { display: none; width: 100%; animation: fadeIn 0.3s ease; }
+        .app-tab.active { display: block; }
 
+        /* ── Alertas ── */
+        .alarm-list { display: flex; flex-direction: column; gap: 12px; }
         .alarm-item {
-            background: var(--bg-card);
-            border-left: 3px solid var(--error);
-            padding: 16px;
-            margin-bottom: 10px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--error);
-            transition: transform 0.15s;
+            padding: 16px 20px; border-left: 4px solid var(--error);
+            display: flex; flex-direction: column; gap: 6px;
         }
-        .alarm-item:hover { transform: translateX(4px); }
-        .alarm-time {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .alarm-msg {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-primary);
-            line-height: 1.4;
-        }
-        .alarm-detail {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-        .alarms-empty {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 60px 20px;
-            font-size: 14px;
-        }
-        .alarms-empty-icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-            opacity: 0.4;
-        }
-
-        /* ── Configurações ── */
-        .settings-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 32px 24px;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-        .settings-box h3 {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        .settings-info {
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-        .settings-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .settings-row:last-child { border-bottom: none; }
-        .settings-label { font-size: 13px; color: var(--text-secondary); }
-        .settings-value { font-size: 13px; color: var(--text-primary); font-weight: 600; }
+        .alarm-time { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .alarm-msg { font-size: 15px; font-weight: 600; }
 
         /* ── Bottom Nav ── */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 68px;
-            background: var(--nav-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid var(--border);
-            z-index: 1000;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 72px;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 1000;
             padding-bottom: env(safe-area-inset-bottom);
         }
         .nav-item {
-            color: var(--text-muted);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 33%;
-            height: 100%;
-            cursor: pointer;
-            transition: color 0.2s;
-            position: relative;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            color: var(--text-muted); cursor: pointer; transition: color 0.2s; width: 33%;
         }
         .nav-item.active { color: var(--primary); }
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 32px;
-            height: 2px;
-            background: var(--primary);
-            border-radius: 0 0 2px 2px;
-        }
-        .nav-icon { font-size: 22px; margin-bottom: 3px; }
-        .nav-text { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
-        .nav-badge {
-            position: absolute;
-            top: 8px;
-            right: calc(50% - 20px);
-            width: 8px;
-            height: 8px;
-            background: var(--error);
-            border-radius: 50%;
-            display: none;
-        }
+        .nav-icon { font-size: 20px; }
+        .nav-text { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
 
         /* ── Notification Banner ── */
         #notification-banner {
-            background: linear-gradient(135deg, var(--warning), #ff7043);
-            color: #0a0f1a;
-            padding: 14px 20px;
-            border-radius: var(--radius-md);
-            margin-top: 16px;
-            font-size: 13px;
-            font-weight: 700;
-            display: none;
-            cursor: pointer;
-            text-align: center;
-            box-shadow: 0 4px 16px rgba(255, 167, 38, 0.3);
-            transition: transform 0.15s;
-            letter-spacing: 0.3px;
+            background: linear-gradient(135deg, var(--warning), #f59e0b);
+            color: #000; padding: 12px 24px; border-radius: var(--radius-md); font-size: 13px; font-weight: 700;
+            cursor: pointer; text-align: center; box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3); display: none; margin-bottom: 20px; width: 100%;
         }
-        #notification-banner:active { transform: scale(0.98); }
 
-        /* ── Responsivo ── */
-        @media (max-width: 380px) {
-            .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
-            .tag-value { font-size: 26px; }
-        }
-        @media (min-width: 768px) {
-            .dashboard-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        @media (max-width: 768px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -496,110 +203,102 @@
 
     <!-- ═══════════════════ TELA DE LOGIN ═══════════════════ -->
     <div id="login-screen" class="screen-container">
-        <div class="auth-box">
-            <img src="/icon.png" alt="AuraStream" class="auth-logo">
+        <div class="auth-box glass-panel">
+            <img src="/icon.png" alt="Logo" class="auth-logo">
             <h2>AuraStream <span style="color: var(--accent);">WEB</span></h2>
-            <p class="subtitle">Monitoramento Industrial 4.0</p>
+            <p>Acesso Seguro ao SCADA Industrial</p>
             <input type="email" id="email" class="input-field" placeholder="E-mail corporativo" required>
             <input type="password" id="password" class="input-field" placeholder="Palavra-passe" required>
-            <button class="btn-primary" onclick="login()">Entrar</button>
-            <p id="login-error" style="color: var(--error); font-size: 13px; display: none; margin-top: 16px; font-weight: 500;"></p>
-            <p class="auth-footer">by Amarildo Jr Vieira</p>
+            <button class="btn-primary" onclick="login()">Autenticar</button>
+            <p id="login-error" style="color: var(--error); font-size: 13px; display: none; margin-top: 16px;"></p>
         </div>
     </div>
 
     <!-- ═══════════════════ TELA DE SETUP ═══════════════════ -->
     <div id="setup-screen" class="screen-container">
-        <div class="auth-box">
-            <div style="font-size: 48px; margin-bottom: 16px;">🏭</div>
-            <h2>Vincular Fábrica</h2>
-            <p class="subtitle">Insira o <strong>ID da Nuvem</strong> gerado no computador do cliente.</p>
-            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8" style="text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 4px; font-family: 'JetBrains Mono', monospace;">
-            <button class="btn-primary btn-secondary" onclick="linkPlant()">Sincronizar</button>
-            <button class="btn-primary btn-ghost" style="margin-top: 12px;" onclick="logout()">Sair</button>
-            <p class="auth-footer">by Amarildo Jr Vieira</p>
+        <div class="auth-box glass-panel">
+            <div style="font-size: 40px; margin-bottom: 16px;">🏭</div>
+            <h2>Ligar à Fábrica</h2>
+            <p>Introduza o <strong>ID da Nuvem</strong> gerado no PC.</p>
+            <input type="text" id="input-plant-id" class="input-field" placeholder="Ex: 8473f9fa" maxlength="8" style="text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 20px; letter-spacing: 2px;">
+            <button class="btn-primary" onclick="linkPlant()">Sincronizar Equipamento</button>
+            <button class="btn-primary btn-ghost" onclick="logout()">Cancelar e Sair</button>
         </div>
     </div>
 
     <!-- ═══════════════════ APP PRINCIPAL ═══════════════════ -->
     <div id="main-app" class="screen-container">
         <header>
-            <div class="header-brand">
-                <img src="/icon.png" alt="AuraStream">
+            <div class="brand">
+                <img src="/icon.png" alt="Logo">
                 <h1>Aura<span>Stream</span></h1>
             </div>
             <div id="plant-status" class="status-badge offline">
-                <span class="status-dot"></span> A LIGAR...
-            </div>
-            <div id="notification-banner" onclick="pedirPermissaoEGerarToken(true)">
-                🔔 ATIVAR ALERTAS INDUSTRIAIS NO SEU DISPOSITIVO
+                <div class="dot"></div>
+                <span id="status-text">A LIGAR...</span>
             </div>
         </header>
+
+        <div id="notification-banner" onclick="pedirPermissaoEGerarToken(true)">
+            🔔 ATIVAR NOTIFICAÇÕES DE ALARME NESTE DISPOSITIVO
+        </div>
 
         <!-- Tab: Dashboard -->
         <div id="tab-dashboard" class="app-tab active">
             <div class="dashboard-grid" id="dashboard">
-                <div style="text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 60px 20px;">
-                    <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.3;">📡</div>
-                    <div style="font-size: 14px;">A aguardar telemetria em tempo real...</div>
+                <div style="text-align: center; color: var(--text-muted); width: 100%; padding: 60px 20px; grid-column: 1 / -1;">
+                    <div style="font-size: 32px; margin-bottom: 16px; opacity: 0.5;">📡</div>
+                    A aguardar sincronização de telemetria...
                 </div>
             </div>
         </div>
 
         <!-- Tab: Alarmes -->
         <div id="tab-alarms" class="app-tab">
-            <div class="alarms-header">
-                <h3>Alarmes Recentes</h3>
-                <button class="btn-clear-alarms" onclick="limparAlarmes()">
-                    <span>🗑</span> Limpar
-                </button>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+                <h3 style="font-size: 20px;">Registo de Eventos</h3>
+                <button onclick="limparAlarmes()" style="background: transparent; color: var(--error); border: 1px solid var(--error); padding: 6px 12px; border-radius: 8px; cursor: pointer;">Limpar Histórico</button>
             </div>
-            <div id="alarms-list">
-                <div class="alarms-empty" id="alarms-empty">
-                    <div class="alarms-empty-icon">✅</div>
-                    <div>Nenhum alarme crítico registado.</div>
+            <div id="alarms-list" class="alarm-list">
+                <div class="glass-panel" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                    Nenhum alarme crítico registado. A operação decorre normalmente.
                 </div>
             </div>
         </div>
 
         <!-- Tab: Configurações -->
         <div id="tab-settings" class="app-tab">
-            <div class="settings-box">
-                <h3>Configurações</h3>
-                <p class="settings-info">Gerencie sua conta e vinculação de fábrica.</p>
-                <div class="settings-row">
-                    <span class="settings-label">Conta</span>
-                    <span class="settings-value" id="user-email-display"></span>
+            <div class="glass-panel" style="padding: 32px; max-width: 500px; margin: 0 auto;">
+                <h3 style="margin-bottom: 24px; font-size: 20px;">Definições de Conta</h3>
+                
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+                    <span style="color: var(--text-muted);">Operador</span>
+                    <strong id="user-email-display">...</strong>
                 </div>
-                <div class="settings-row">
-                    <span class="settings-label">Planta</span>
-                    <span class="settings-value" id="plant-id-display">—</span>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 32px;">
+                    <span style="color: var(--text-muted);">Fábrica Conectada</span>
+                    <strong id="plant-id-display" style="color: var(--accent); font-family: 'JetBrains Mono', monospace;">...</strong>
                 </div>
-                <div class="settings-row">
-                    <span class="settings-label">Versão</span>
-                    <span class="settings-value">v5.0.0</span>
-                </div>
-                <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 10px;">
-                    <button class="btn-primary btn-danger" onclick="desvincularPlanta()">Trocar de Fábrica</button>
-                    <button class="btn-primary btn-ghost" onclick="logout()">Sair (Logout)</button>
-                </div>
+
+                <button class="btn-primary btn-ghost" onclick="desvincularPlanta()" style="color: var(--warning); border-color: rgba(245, 158, 11, 0.3);">Trocar de Equipamento</button>
+                <button class="btn-primary btn-ghost" onclick="logout()" style="color: var(--error); border-color: rgba(239, 68, 68, 0.3);">Terminar Sessão</button>
             </div>
         </div>
 
         <!-- Bottom Navigation -->
         <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('dashboard', this)" id="nav-btn-dashboard">
-                <div class="nav-icon">📊</div>
-                <div class="nav-text">DADOS</div>
+            <div class="nav-item active" onclick="switchTab('dashboard', this)">
+                <div class="nav-icon">📈</div>
+                <div class="nav-text">PROCESSO</div>
             </div>
-            <div class="nav-item" id="nav-btn-alarms" onclick="switchTab('alarms', this)">
-                <div class="nav-icon">🚨</div>
-                <div class="nav-text">ALERTAS</div>
-                <div class="nav-badge" id="alarm-badge"></div>
+            <div class="nav-item" onclick="switchTab('alarms', this)" style="position: relative;">
+                <div class="nav-icon">⚠️</div>
+                <div class="nav-text">ALARMES</div>
+                <div id="alarm-badge" style="position: absolute; top: 0; right: 25%; width: 8px; height: 8px; background: var(--error); border-radius: 50%; display: none; box-shadow: 0 0 8px var(--error);"></div>
             </div>
-            <div class="nav-item" onclick="switchTab('settings', this)" id="nav-btn-settings">
+            <div class="nav-item" onclick="switchTab('settings', this)">
                 <div class="nav-icon">⚙️</div>
-                <div class="nav-text">AJUSTES</div>
+                <div class="nav-text">SISTEMA</div>
             </div>
         </div>
     </div>
@@ -621,48 +320,30 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const dbRef = firebase.database();
-        
         let messaging = null;
-        try {
-            if (firebase.messaging.isSupported()) {
-                messaging = firebase.messaging();
-            } else {
-                console.warn("FCM não suportado neste browser.");
-            }
-        } catch (err) {
-            console.error("Bloqueio detetado no Firebase Messaging.", err);
+
+        if (firebase.messaging.isSupported()) {
+            messaging = firebase.messaging();
         }
 
         let currentPlantId = null;
-        let unsubscribeStatus = null;
-        let unsubscribeTags = null;
-        let unsubscribeAlarms = null;
-        
-        // ═══════════════════ SERVICE WORKER ═══════════════════
-        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' })
-                .then((registration) => { registration.update(); });
-            });
+        const chartInstances = {};
+        const chartHistories = {};
+        const MAX_DATA_POINTS = 20; // Pontos no gráfico (sparkline)
 
-            navigator.serviceWorker.addEventListener('message', (event) => {
-                if (event.data && event.data.type === 'SWITCH_TAB') {
-                    const navBtn = document.getElementById('nav-btn-' + event.data.tab);
-                    if(navBtn) switchTab(event.data.tab, navBtn);
-                }
-            });
+        // ═══════════════════ LÓGICA DE UI & TABS ═══════════════════
+        function mostrarTela(tela) {
+            document.querySelectorAll('.screen-container').forEach(e => e.style.display = 'none');
+            tela.style.display = 'flex';
         }
 
-        // Abertura direta via notificação
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('tab') === 'alarms') {
-                setTimeout(() => {
-                    const navBtn = document.getElementById('nav-btn-alarms');
-                    if(navBtn) switchTab('alarms', navBtn);
-                }, 500);
-            }
-        };
+        function switchTab(tabName, element) {
+            document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            if(tabName === 'alarms') document.getElementById('alarm-badge').style.display = 'none';
+        }
 
         // ═══════════════════ AUTENTICAÇÃO ═══════════════════
         auth.onAuthStateChanged((user) => {
@@ -674,281 +355,213 @@
                         document.getElementById('plant-id-display').innerText = currentPlantId;
                         mostrarTela(document.getElementById('main-app'));
                         iniciarMonitoramento(currentPlantId);
-                        
-                        if (Notification.permission === "granted") {
-                            pedirPermissaoEGerarToken(false);
-                        } else {
+                        if (Notification.permission !== "granted") {
                             document.getElementById('notification-banner').style.display = "block";
+                        } else {
+                            pedirPermissaoEGerarToken(false);
                         }
                     } else {
                         mostrarTela(document.getElementById('setup-screen'));
                     }
-                }).catch((err) => {
-                    alert("Acesso Negado: A sua conta não tem permissões válidas.\n" + err.message);
-                    logout();
-                });
+                }).catch(() => { logout(); });
             } else {
                 pararMonitoramento();
                 mostrarTela(document.getElementById('login-screen'));
             }
         });
 
-        function mostrarTela(tela) {
-            document.querySelectorAll('.screen-container').forEach(e => e.style.display = 'none');
-            tela.style.display = 'flex';
-        }
-
-        function switchTab(tabName, element) {
-            document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('tab-' + tabName).classList.add('active');
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-            element.classList.add('active');
-            if(tabName === 'alarms') {
-                document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
-                document.getElementById('alarm-badge').style.display = 'none';
-            }
-        }
-
         function login() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('password').value;
-            const errEl = document.getElementById('login-error');
-            errEl.style.display = 'none';
             auth.signInWithEmailAndPassword(email, pass).catch((err) => {
-                errEl.innerText = "Credenciais inválidas. Verifique e tente novamente.";
-                errEl.style.display = 'block';
+                document.getElementById('login-error').innerText = "Credenciais inválidas.";
+                document.getElementById('login-error').style.display = 'block';
             });
         }
-
         function logout() { auth.signOut(); }
 
         function linkPlant() {
             const pid = document.getElementById('input-plant-id').value.trim().toLowerCase();
-            if(!pid || pid.length < 4) return;
-            dbRef.ref('users/' + auth.currentUser.uid + '/plant_id').set(pid).then(() => {
-                currentPlantId = pid;
-                document.getElementById('plant-id-display').innerText = pid;
-                mostrarTela(document.getElementById('main-app'));
-                iniciarMonitoramento(currentPlantId);
-                
-                if (Notification.permission !== "granted") {
-                    document.getElementById('notification-banner').style.display = "block";
-                } else {
-                    pedirPermissaoEGerarToken(false);
-                }
-            });
+            if(pid.length >= 4) {
+                dbRef.ref('users/' + auth.currentUser.uid + '/plant_id').set(pid).then(() => {
+                    window.location.reload();
+                });
+            }
         }
-
         function desvincularPlanta() {
-            if(confirm("Desvincular esta fábrica? Poderá vincular outra a seguir.")) {
-                pararMonitoramento();
-                dbRef.ref('users/' + auth.currentUser.uid + '/plant_id').remove().then(() => {
-                    mostrarTela(document.getElementById('setup-screen'));
-                });
+            if(confirm("Deseja trocar de equipamento industrial?")) {
+                dbRef.ref('users/' + auth.currentUser.uid + '/plant_id').remove().then(() => window.location.reload());
             }
         }
 
-        function limparAlarmes() {
-            if (!currentPlantId) return;
-            if (confirm("Apagar todo o histórico de alarmes desta fábrica?")) {
-                dbRef.ref('alarms/' + currentPlantId).remove().then(() => {
-                    document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
-                    document.getElementById('alarm-badge').style.display = 'none';
-                }).catch((err) => {
-                    alert("Acesso Negado.\n\nDetalhes: " + err.message);
-                });
-            }
-        }
-
-        // ═══════════════════ AJUSTE DINÂMICO DE FONTE ═══════════════════
-        function ajustarFonteValor(element, value) {
-            const length = value.toString().length;
-            if (length <= 5) element.style.fontSize = "30px";
-            else if (length <= 7) element.style.fontSize = "26px";
-            else if (length <= 9) element.style.fontSize = "22px";
-            else element.style.fontSize = "18px";
-        }
-
-        // ═══════════════════ PUSH NOTIFICATIONS ═══════════════════
-        function getDeviceOS() {
-            const ua = navigator.userAgent;
-            if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
-            if (/android/i.test(ua)) return 'android';
-            return 'web';
-        }
-
-        function pedirPermissaoEGerarToken(mostrarAlertas = false) {
-            if (!("Notification" in window) || !("serviceWorker" in navigator) || !messaging) {
-                if(mostrarAlertas) alert("Navegador não suporta Push Industrial.");
-                return;
-            }
-
+        // ═══════════════════ NOTIFICAÇÕES PUSH ═══════════════════
+        function pedirPermissaoEGerarToken(mostrarAlertas) {
+            if (!messaging) return;
             Notification.requestPermission().then(permission => {
                 if (permission === "granted") {
                     document.getElementById('notification-banner').style.display = "none";
-                    
-                    navigator.serviceWorker.ready.then((registration) => {
-                        messaging.getToken({ 
-                            vapidKey: VAPID_KEY,
-                            serviceWorkerRegistration: registration 
-                        }).then((currentToken) => {
-                            if (currentToken && currentPlantId && auth.currentUser) {
-                                dbRef.ref(`plants/${currentPlantId}/tokens/${currentToken}`).set({
-                                    uid: auth.currentUser.uid,
-                                    os: getDeviceOS(),
-                                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    navigator.serviceWorker.ready.then((reg) => {
+                        messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg }).then((token) => {
+                            if (token && currentPlantId) {
+                                dbRef.ref(`plants/${currentPlantId}/tokens/${token}`).set({
+                                    uid: auth.currentUser.uid, updatedAt: firebase.database.ServerValue.TIMESTAMP
                                 });
-                                if(mostrarAlertas) alert("Alertas industriais ativados com sucesso.");
                             }
-                        }).catch((err) => {
-                            if(mostrarAlertas) alert("Erro ao contactar FCM: " + err);
                         });
                     });
-                } else {
-                    if(mostrarAlertas) alert("Permissão negada pelo operador.");
                 }
             });
         }
 
         if (messaging) {
             messaging.onMessage((payload) => {
-                document.getElementById('nav-btn-alarms').classList.add('alarm-active');
                 document.getElementById('alarm-badge').style.display = 'block';
-                if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
-                    const data = payload.notification || payload.data || {};
-                    navigator.serviceWorker.ready.then(function(registration) {
-                        registration.showNotification(data.title || "ALARME INDUSTRIAL", {
-                            body: data.body || "Alarme disparado",
-                            icon: "/icon.png",
-                            vibrate: [500, 200, 500, 200, 800],
-                            data: { url: '/?tab=alarms' }
-                        });
-                    });
+            });
+        }
+
+        // ═══════════════════ CONFIGURAÇÃO DOS GRÁFICOS (CHART.JS) ═══════════════════
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Inter', sans-serif";
+
+        function createChart(canvasId, colorHex) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            // Criar gradiente sob a linha
+            const gradient = ctx.createLinearGradient(0, 0, 0, 80);
+            gradient.addColorStop(0, colorHex + '66'); // 40% opacidade
+            gradient.addColorStop(1, colorHex + '00'); // 0% opacidade
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ data: [], borderColor: colorHex, backgroundColor: gradient, borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false, beginAtZero: false } // Auto escala focada no valor
+                    },
+                    animation: { duration: 0 } // Desliga animação para performance SCADA
                 }
             });
         }
 
-        // ═══════════════════ MOTOR DE DADOS ═══════════════════
+        // ═══════════════════ MOTOR DE DADOS SCADA ═══════════════════
         function iniciarMonitoramento(plantId) {
             const dashboard = document.getElementById('dashboard');
-            const alarmsList = document.getElementById('alarms-list');
-
-            // Alarmes em tempo real
-            const alarmsRef = dbRef.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(30);
-            unsubscribeAlarms = alarmsRef.on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    let htmlElements = '';
-                    snapshot.forEach((child) => {
-                        const alarm = child.val();
-                        const timeStr = new Date(alarm.timestamp).toLocaleString('pt-BR');
-                        htmlElements = `
-                            <div class="alarm-item">
-                                <div class="alarm-time">${timeStr}</div>
-                                <div class="alarm-msg">${alarm.tag.replace(/_/g, ' ')}: ${typeof alarm.value === 'number' ? alarm.value.toFixed(2) : alarm.value}</div>
-                                <div class="alarm-detail">${alarm.message || ''}</div>
-                            </div>
-                        ` + htmlElements;
-                    });
-                    alarmsList.innerHTML = htmlElements;
-                } else {
-                    alarmsList.innerHTML = '<div class="alarms-empty"><div class="alarms-empty-icon">✅</div><div>Nenhum alarme crítico registado.</div></div>';
-                    document.getElementById('nav-btn-alarms').classList.remove('alarm-active');
-                    document.getElementById('alarm-badge').style.display = 'none';
-                }
+            
+            // LER STATUS ONLINE
+            dbRef.ref('plants/' + plantId + '/online').on('value', (snap) => {
+                const isOnline = snap.val();
+                const badge = document.getElementById('plant-status');
+                badge.className = "status-badge " + (isOnline ? "online" : "offline");
+                document.getElementById('status-text').innerText = (isOnline ? "SISTEMA ONLINE" : "SISTEMA OFFLINE");
             });
 
-            // Status online/offline
-            unsubscribeStatus = dbRef.ref('plants/' + plantId + '/online').on('value', (snapshot) => {
-                const isOnline = snapshot.val();
-                const ps = document.getElementById('plant-status');
-                if (isOnline) {
-                    ps.className = "status-badge online";
-                    ps.innerHTML = '<span class="status-dot"></span> ONLINE — ' + plantId;
-                } else {
-                    ps.className = "status-badge offline";
-                    ps.innerHTML = '<span class="status-dot"></span> OFFLINE — ' + plantId;
-                }
-            });
+            // LER TAGS EM TEMPO REAL
+            dbRef.ref('plants/' + plantId + '/tags').on('value', (snap) => {
+                const tags = snap.val();
+                if (!tags) return;
+                if (dashboard.innerHTML.includes("aguardar")) dashboard.innerHTML = '';
 
-            // Tags em tempo real
-            unsubscribeTags = dbRef.ref('plants/' + plantId + '/tags').on('value', (snapshot) => {
-                const tags = snapshot.val();
-                if (tags) {
-                    if(dashboard.innerHTML.includes("aguardar")) dashboard.innerHTML = '';
+                const nowTime = new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+
+                for (const [tagName, data] of Object.entries(tags)) {
+                    let id = "tag_" + tagName.replace(/[^a-zA-Z0-9]/g, "_");
+                    let card = document.getElementById(id);
                     
-                    const receivedTags = new Set(Object.keys(tags));
+                    let val = typeof data === 'object' ? (data.value || 0) : data;
+                    let unit = typeof data === 'object' && data.unit ? data.unit : "";
+                    let isAlarming = typeof data === 'object' && data.is_alarming;
+                    let displayTitle = tagName.replace(/_/g, " ");
 
-                    for (const [tagName, tagData] of Object.entries(tags)) {
-                        let id = "tag_" + tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
-                        let card = document.getElementById(id);
-                        if (!card) {
-                            card = document.createElement("div");
-                            card.className = "card";
-                            card.id = id;
-                            dashboard.appendChild(card);
-                        }
-                        
-                        let displayTitle = tagName.replace(/_/g, " ");
-                        let displayValue = "0.00";
-                        let unitText = "";
-                        let rangeText = "";
-                        let isAlarming = false;
-                        
-                        if (tagData !== null) {
-                            if (typeof tagData === 'object') {
-                                let rawVal = tagData.value !== undefined ? tagData.value : 0;
-                                displayValue = typeof rawVal === 'number' ? rawVal.toFixed(2) : String(rawVal);
-                                unitText = tagData.unit ? `<span class="tag-unit">${tagData.unit}</span>` : "";
-                                isAlarming = tagData.is_alarming === true;
-                                
-                                if (tagData.min !== undefined && tagData.max !== undefined) {
-                                    rangeText = `<div class="tag-range">Faixa: ${tagData.min} — ${tagData.max} ${tagData.unit || ''}</div>`;
-                                }
-                            } else {
-                                displayValue = typeof tagData === 'number' ? tagData.toFixed(2) : String(tagData);
-                            }
-                        }
-                        
-                        if (isAlarming) {
-                            card.classList.add('alarm-active');
-                        } else {
-                            card.classList.remove('alarm-active');
-                        }
-                        
+                    // Inicializar histórico
+                    if (!chartHistories[id]) chartHistories[id] = { labels: [], data: [] };
+
+                    // Construir Card se não existir
+                    if (!card) {
+                        card = document.createElement("div");
+                        card.className = "glass-panel metric-card";
+                        card.id = id;
                         card.innerHTML = `
-                            <div class="tag-title">${displayTitle}</div>
-                            <div class="tag-value">
-                                <span id="${id}_value">${displayValue}</span>${unitText}
+                            <div class="card-header">
+                                <span class="card-title">${displayTitle}</span>
+                                <span class="card-indicator" id="${id}_ind">Normal</span>
                             </div>
-                            ${rangeText}
+                            <div class="card-body">
+                                <span class="card-value" id="${id}_val">0.00</span>
+                                <span class="card-unit">${unit}</span>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="chart_${id}"></canvas>
+                            </div>
                         `;
-
-                        setTimeout(() => {
-                            const el = document.getElementById(id + "_value");
-                            if (el) ajustarFonteValor(el, displayValue);
-                        }, 0);
+                        dashboard.appendChild(card);
+                        // Iniciar o Gráfico para esta variável (Verde por padrão, ou vermelho se em alarme)
+                        chartInstances[id] = createChart("chart_" + id, isAlarming ? "#ef4444" : "#10b981");
                     }
 
-                    // Remover cards órfãos
-                    document.querySelectorAll("#dashboard .card").forEach(card => {
-                        let exists = false;
-                        for (const tagName of receivedTags) {
-                            let normalized = tagName.replace(/[^a-zA-Z0-9_-]/g, "_");
-                            if ("tag_" + normalized === card.id) { exists = true; break; }
-                        }
-                        if (!exists) card.remove();
+                    // Atualizar UI
+                    document.getElementById(id + "_val").innerText = Number(val).toFixed(2);
+                    
+                    const ind = document.getElementById(id + "_ind");
+                    if (isAlarming) {
+                        card.classList.add('alarm-active');
+                        ind.innerText = "ALERTA";
+                        ind.style.color = "var(--error)";
+                        ind.style.background = "var(--error-glow)";
+                        chartInstances[id].data.datasets[0].borderColor = "#ef4444"; // Muda cor da linha para vermelho
+                    } else {
+                        card.classList.remove('alarm-active');
+                        ind.innerText = "Operacional";
+                        ind.style.color = "var(--primary)";
+                        ind.style.background = "var(--primary-glow)";
+                        chartInstances[id].data.datasets[0].borderColor = "#10b981"; // Volta para verde
+                    }
+
+                    // Atualizar Gráfico (Limita a MAX_DATA_POINTS)
+                    chartHistories[id].labels.push(nowTime);
+                    chartHistories[id].data.push(val);
+                    if (chartHistories[id].labels.length > MAX_DATA_POINTS) {
+                        chartHistories[id].labels.shift();
+                        chartHistories[id].data.shift();
+                    }
+                    
+                    chartInstances[id].data.labels = chartHistories[id].labels;
+                    chartInstances[id].data.datasets[0].data = chartHistories[id].data;
+                    chartInstances[id].update();
+                }
+            });
+
+            // LER ALARMES
+            dbRef.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(20).on('value', (snap) => {
+                const list = document.getElementById('alarms-list');
+                if (snap.exists()) {
+                    let html = '';
+                    snap.forEach(child => {
+                        const al = child.val();
+                        const time = new Date(al.timestamp).toLocaleString('pt-PT');
+                        html = `
+                            <div class="glass-panel alarm-item">
+                                <span class="alarm-time">${time}</span>
+                                <span class="alarm-msg">${al.tag.replace(/_/g, ' ')}: ${Number(al.value).toFixed(2)}</span>
+                                <span style="font-size:13px; color:var(--text-muted)">${al.message}</span>
+                            </div>
+                        ` + html;
                     });
+                    list.innerHTML = html;
+                } else {
+                    list.innerHTML = `<div class="glass-panel" style="padding: 40px; text-align: center; color: var(--text-muted);">Nenhum alarme crítico registado. A operação decorre normalmente.</div>`;
                 }
             });
         }
 
-        function pararMonitoramento() {
-            if (currentPlantId) {
-                dbRef.ref('plants/' + currentPlantId + '/online').off('value', unsubscribeStatus);
-                dbRef.ref('plants/' + currentPlantId + '/tags').off('value', unsubscribeTags);
-                dbRef.ref('alarms/' + currentPlantId).off('value', unsubscribeAlarms);
+        function limparAlarmes() {
+            if(confirm("Deseja eliminar o histórico visual de alarmes?")) {
+                dbRef.ref('alarms/' + currentPlantId).remove();
             }
         }
+        function pararMonitoramento() {}
     </script>
 </body>
 </html>
