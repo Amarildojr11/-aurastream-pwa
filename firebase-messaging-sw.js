@@ -20,7 +20,10 @@ const firebaseConfig = {
     measurementId: "G-7RFD5KWBRT"
 };
 
-// Apenas inicializa, não intercepta onBackgroundMessage
+// 1. INICIALIZAR O FIREBASE (Faltava esta linha!)
+firebase.initializeApp(firebaseConfig);
+
+// 2. SÓ DEPOIS CHAMAR O MESSAGING
 const messaging = firebase.messaging();
 
 // TRATAMENTO EXCLUSIVO DE CLIQUE NA NOTIFICAÇÃO DO SISTEMA
