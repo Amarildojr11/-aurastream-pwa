@@ -452,11 +452,12 @@
         // Configuração Global do Gráfico Único
         let mainChartInstance = null;
         const TIME_WINDOW_MS = 60 * 60 * 1000; // 1 Hora em milissegundos
-        const MAX_SAFE_POINTS = 3600; // Proteção para o navegador não travar com demasiados dados
+        const MAX_SAFE_POINTS = 7200; // Proteção estendida
         let globalChartLabels = [];
         let globalChartTimestamps = []; // Novo array para controlo exato do tempo
         let tagDatasets = {}; // Mapeia tag_name -> config do dataset
         let cycleCount = 0;
+        let lastChartUpdateMs = 0; // Controle de taxa de atualização (Throttle)
 
         // Paleta de cores premium para as linhas/cards (como na imagem)
         const TAG_COLORS = ['#00E676', '#00BCD4', '#FF9800', '#9C27B0', '#FDD835', '#F44336', '#3b82f6'];
@@ -616,12 +617,19 @@
 
                 cycleCount++;
                 const now = new Date();
+                const agoraMs = now.getTime();
                 const timeStr = now.toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
                 document.getElementById('lbl-cycle-time').innerText = `Ciclo #${cycleCount} | ${timeStr}`;
 
-                // Atualiza Labels e Timestamps globais
-                globalChartLabels.push(timeStr);
-                globalChartTimestamps.push(now.getTime());
+                // Throttle: Limita a inserção de pontos no gráfico a 1 por segundo.
+                // Evita que leituras sub-segundo do CLP estourem o limite do gráfico antes de completar 1 hora.
+                const canUpdateChart = (agoraMs - lastChartUpdateMs) >= 1000;
+
+                if (canUpdateChart) {
+                    lastChartUpdateMs = agoraMs;
+                    globalChartLabels.push(timeStr);
+                    globalChartTimestamps.push(agoraMs);
+                }
 
                 let activeAlarmsCount = 0;
                 
@@ -649,8 +657,9 @@
                         const assignedColor = TAG_COLORS[colorIndex % TAG_COLORS.length];
                         colorIndex++;
                         
-                        // Corrige o alinhamento preenchendo os ciclos passados com "null"
-                        const paddingArray = new Array(Math.max(0, globalChartLabels.length - 1)).fill(null);
+                        // Corrige o alinhamento de acordo com o estado do Throttle
+                        const padLen = canUpdateChart ? Math.max(0, globalChartLabels.length - 1) : globalChartLabels.length;
+                        const paddingArray = new Array(padLen).fill(null);
                         
                         tagDatasets[tagName] = {
                             color: assignedColor,
@@ -730,31 +739,36 @@
                     }
                 }
 
-                // Sincroniza e insere todos os valores no Gráfico
-                for (const tagName in tagDatasets) {
-                    if (tagsDesteCiclo.has(tagName)) {
-                        let data = tags[tagName];
-                        let val = typeof data === 'object' ? (data.value || 0) : data;
-                        tagDatasets[tagName].dataArray.push(val);
-                    } else {
-                        // Se a tag não foi enviada neste ciclo, preenchemos com null para o gráfico não dessincronizar
-                        tagDatasets[tagName].dataArray.push(null);
-                    }
-                }
-
-                // ─── JANELA DE TEMPO (1 HORA) ───
-                // Limpa pontos antigos calculando a diferença entre o tempo real de agora e do ponto inserido.
-                const limiteDeTempo = now.getTime() - TIME_WINDOW_MS;
-                
-                while (globalChartTimestamps.length > 0 && 
-                      (globalChartTimestamps[0] < limiteDeTempo || globalChartTimestamps.length > MAX_SAFE_POINTS)) {
-                    
-                    globalChartTimestamps.shift();
-                    globalChartLabels.shift();
-                    
+                if (canUpdateChart) {
+                    // Sincroniza e insere todos os valores no Gráfico
                     for (const tagName in tagDatasets) {
-                        tagDatasets[tagName].dataArray.shift();
+                        if (tagsDesteCiclo.has(tagName)) {
+                            let data = tags[tagName];
+                            let val = typeof data === 'object' ? (data.value || 0) : data;
+                            tagDatasets[tagName].dataArray.push(val);
+                        } else {
+                            // Se a tag não foi enviada neste ciclo, preenchemos com null para o gráfico não dessincronizar
+                            tagDatasets[tagName].dataArray.push(null);
+                        }
                     }
+
+                    // ─── JANELA DE TEMPO (1 HORA) ───
+                    // Limpa pontos antigos calculando a diferença entre o tempo real de agora e do ponto inserido.
+                    const limiteDeTempo = agoraMs - TIME_WINDOW_MS;
+                    
+                    while (globalChartTimestamps.length > 0 && 
+                          (globalChartTimestamps[0] < limiteDeTempo || globalChartTimestamps.length > MAX_SAFE_POINTS)) {
+                        
+                        globalChartTimestamps.shift();
+                        globalChartLabels.shift();
+                        
+                        for (const tagName in tagDatasets) {
+                            tagDatasets[tagName].dataArray.shift();
+                        }
+                    }
+                    
+                    // Redesenha o Gráfico Único
+                    mainChartInstance.update();
                 }
 
                 // Atualiza rodapé de alarmes
