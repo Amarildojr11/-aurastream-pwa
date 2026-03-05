@@ -445,6 +445,16 @@
 
         if (firebase.messaging.isSupported()) {
             messaging = firebase.messaging();
+            
+            // CORREÇÃO: REGISTO OBRIGATÓRIO DO SERVICE WORKER
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                .then(function(reg) {
+                    console.log('Service Worker registado com sucesso:', reg.scope);
+                }).catch(function(err) {
+                    console.log('Falha ao registar o Service Worker:', err);
+                });
+            }
         }
 
         let currentPlantId = null;
