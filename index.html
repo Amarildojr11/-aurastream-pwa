@@ -611,7 +611,22 @@
             // LER TAGS EM TEMPO REAL
             dbRef.ref('plants/' + plantId + '/tags').on('value', (snap) => {
                 const tags = snap.val();
-                if (!tags) return;
+                
+                // 1. SE A BASE DE DADOS FOI APAGADA (WIPE COMPLETO)
+                if (!tags) {
+                    dashboardContainer.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">A aguardar sincronização de telemetria da fábrica...</div>';
+                    tagDatasets = {};
+                    globalChartLabels.length = 0;
+                    globalChartTimestamps.length = 0;
+                    if(mainChartInstance) {
+                        mainChartInstance.data.labels = globalChartLabels;
+                        mainChartInstance.data.datasets = [];
+                        mainChartInstance.update();
+                    }
+                    document.getElementById('lbl-cycle-time').innerText = `Ciclo #-- | --:--:--`;
+                    document.getElementById('lbl-alarm-count').style.display = 'none';
+                    return;
+                }
                 
                 if (dashboardContainer.innerHTML.includes("aguardar")) dashboardContainer.innerHTML = '';
 
@@ -622,7 +637,6 @@
                 document.getElementById('lbl-cycle-time').innerText = `Ciclo #${cycleCount} | ${timeStr}`;
 
                 // Throttle: Limita a inserção de pontos no gráfico a 1 por segundo.
-                // Evita que leituras sub-segundo do CLP estourem o limite do gráfico antes de completar 1 hora.
                 const canUpdateChart = (agoraMs - lastChartUpdateMs) >= 1000;
 
                 if (canUpdateChart) {
@@ -635,6 +649,25 @@
                 
                 // Mapeia quais tags vieram neste ciclo
                 const tagsDesteCiclo = new Set(Object.keys(tags));
+
+                // === 2. LIMPEZA ATIVA DE TAGS QUE FORAM REMOVIDAS (O FIM DO CACHE FANTASMA) ===
+                for (const existingTagName in tagDatasets) {
+                    if (!tagsDesteCiclo.has(existingTagName)) {
+                        // Remove Card HTML
+                        let id = "card_" + existingTagName.replace(/[^a-zA-Z0-9]/g, "_");
+                        let card = document.getElementById(id);
+                        if (card) card.remove();
+                        
+                        // Remove Dataset do Gráfico
+                        const displayTitle = existingTagName.replace(/_/g, " ");
+                        const dsIndex = mainChartInstance.data.datasets.findIndex(ds => ds.label.includes(displayTitle));
+                        if (dsIndex !== -1) {
+                            mainChartInstance.data.datasets.splice(dsIndex, 1);
+                        }
+                        
+                        delete tagDatasets[existingTagName];
+                    }
+                }
 
                 for (const [tagName, data] of Object.entries(tags)) {
                     let id = "card_" + tagName.replace(/[^a-zA-Z0-9]/g, "_");
