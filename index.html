@@ -285,8 +285,17 @@
             </div>
         </div>
 
-        <!-- Tab 1: Tendência (Gráfico com altura estendida para mobile) -->
-        <div id="tab-trend" class="app-tab active">
+        <!-- Tab 1: Variáveis (Cards Isolados) - AGORA É A ABA PRINCIPAL E DEFAULT -->
+        <div id="tab-vars" class="app-tab active">
+            <div class="cards-grid" id="cards-container">
+                <div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">
+                    A aguardar sincronização de telemetria da fábrica...
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Tendência (Gráfico com altura estendida para mobile) - AGORA É SECUNDÁRIA -->
+        <div id="tab-trend" class="app-tab">
             <div class="glass-panel" style="padding: 16px; display: flex; flex-direction: column;">
                 <div class="chart-header">
                     <span>Tendência Contínua</span>
@@ -294,15 +303,6 @@
                 </div>
                 <div class="main-chart-wrapper" style="height: 60vh;">
                     <canvas id="mainTrendChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tab 2: Variáveis (Cards Isolados) -->
-        <div id="tab-vars" class="app-tab">
-            <div class="cards-grid" id="cards-container">
-                <div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">
-                    A aguardar sincronização de telemetria da fábrica...
                 </div>
             </div>
         </div>
@@ -339,15 +339,15 @@
             </div>
         </div>
 
-        <!-- 🧭 BOTTOM NAVIGATION COM 4 ITENS -->
+        <!-- 🧭 BOTTOM NAVIGATION COM 4 ITENS (ORDEM ATUALIZADA) -->
         <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('trend', this)">
-                <div class="nav-icon">📈</div>
-                <div class="nav-text">TENDÊNCIA</div>
-            </div>
-            <div class="nav-item" onclick="switchTab('vars', this)">
+            <div class="nav-item active" onclick="switchTab('vars', this)">
                 <div class="nav-icon">🎛️</div>
                 <div class="nav-text">VARIÁVEIS</div>
+            </div>
+            <div class="nav-item" onclick="switchTab('trend', this)">
+                <div class="nav-icon">📈</div>
+                <div class="nav-text">TENDÊNCIA</div>
             </div>
             <div class="nav-item" onclick="switchTab('alarms', this)" style="position: relative;">
                 <div class="nav-icon">⚠️</div>
