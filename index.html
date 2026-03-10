@@ -100,50 +100,7 @@
         .btn-primary:active { transform: scale(0.98); }
         .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); margin-top: 12px; }
 
-        /* ── Dashboard Principal (Estilo Print) ── */
-        .dash-window {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            padding: 24px;
-        }
-
-        .dash-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .dash-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        .dash-controls {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .dash-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; font-weight: 600; text-transform: uppercase; }
-        .mac-dots { display: flex; gap: 6px; }
-        .mac-dots .dot { width: 12px; height: 12px; border-radius: 50%; }
-        .mac-dots .dot:nth-child(1) { background: #ff5f56; }
-        .mac-dots .dot:nth-child(2) { background: #ffbd2e; }
-        .mac-dots .dot:nth-child(3) { background: #27c93f; }
-
         /* ── Secção do Gráfico ── */
-        .chart-section {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
         .chart-header {
             display: flex;
             justify-content: space-between;
@@ -152,11 +109,12 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
+            margin-bottom: 16px;
         }
         .chart-live { color: var(--primary); display: flex; align-items: center; gap: 6px; }
+        
         .main-chart-wrapper {
             width: 100%;
-            height: 280px;
             position: relative;
         }
 
@@ -165,7 +123,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 16px;
-            margin-top: 10px;
+            width: 100%;
         }
         
         .scada-card {
@@ -230,21 +188,6 @@
         .scada-range { color: var(--text-muted); font-style: italic; }
         .scada-total { color: var(--accent); font-weight: 600; }
 
-        /* ── Footer do Dashboard ── */
-        .dash-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 16px;
-            margin-top: 8px;
-            font-size: 11px;
-            color: var(--text-muted);
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .footer-stats { display: flex; gap: 16px; }
-        .stat-item { display: flex; align-items: center; gap: 6px; }
-
         /* ── Outras Tabs & Nav ── */
         .app-tab { display: none; width: 100%; }
         .app-tab.active { display: block; animation: fadeIn 0.3s ease; }
@@ -258,7 +201,7 @@
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; gap: 6px;
-            color: var(--text-muted); cursor: pointer; transition: color 0.2s; width: 33%;
+            color: var(--text-muted); cursor: pointer; transition: color 0.2s; width: 25%;
         }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 20px; }
@@ -279,11 +222,13 @@
             cursor: pointer; text-align: center; display: none; margin-bottom: 16px; width: 100%;
         }
 
+        /* Ocultar elementos desnecessários no Mobile */
+        .hide-mobile { display: block; }
+
         @media (max-width: 768px) {
             .cards-grid { grid-template-columns: 1fr 1fr; }
-            .main-chart-wrapper { height: 200px; }
             .scada-val { font-size: 26px; }
-            .dash-controls { display: none; }
+            .hide-mobile { display: none; }
         }
         @media (max-width: 480px) {
             .cards-grid { grid-template-columns: 1fr; }
@@ -324,57 +269,45 @@
             🔔 ATIVAR NOTIFICAÇÕES DE ALARME NESTE DISPOSITIVO
         </div>
 
-        <!-- Tab: Dashboard -->
-        <div id="tab-dashboard" class="app-tab active">
-            <div class="glass-panel dash-window">
-                
-                <!-- Header -->
-                <div class="dash-header">
-                    <div class="dash-title">
-                        <div class="led-indicator led-green" id="led-status"></div>
-                        AuraStream Dashboard
-                    </div>
-                    <div class="dash-controls">
-                        <span class="dash-subtitle">Monitoramento em Tempo Real</span>
-                        <div class="mac-dots">
-                            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Gráfico Central -->
-                <div class="chart-section">
-                    <div class="chart-header">
-                        <span>Tendência — Últimos 60 Minutos</span>
-                        <span class="chart-live"><div class="led-indicator led-green"></div> AO VIVO</span>
-                    </div>
-                    <div class="main-chart-wrapper">
-                        <canvas id="mainTrendChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Grid de Variáveis -->
-                <div class="cards-grid" id="cards-container">
-                    <div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">
-                        A aguardar sincronização de telemetria da fábrica...
-                    </div>
-                </div>
-
-                <!-- Footer Stats -->
-                <div class="dash-footer">
-                    <div class="footer-stats">
-                        <span class="stat-item"><div class="led-indicator led-green"></div> <span id="lbl-status-text">A LIGAR...</span></span>
-                        <span class="stat-item" id="lbl-alarm-count" style="color: var(--warning); display:none;"><div class="led-indicator led-yellow"></div> <span>0 ALERTAS</span></span>
-                    </div>
-                    <div class="footer-time" id="lbl-cycle-time">
-                        Ciclo #-- | --:--:--
-                    </div>
-                </div>
-
+        <!-- 🛡️ BARRA DE ESTADO GLOBAL (Fixa no Topo do App) -->
+        <div class="glass-panel" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="led-indicator led-green" id="led-status"></div>
+                <span id="lbl-status-text" style="font-size: 12px; font-weight: 700; letter-spacing: 0.5px;">A LIGAR...</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span id="lbl-alarm-count" style="color: var(--warning); display:none; font-size: 12px; font-weight: bold; align-items: center; gap: 6px;">
+                    <div class="led-indicator led-yellow"></div> <span id="alarm-count-text">0 ALERTAS</span>
+                </span>
+                <span id="lbl-cycle-time" class="hide-mobile" style="font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted);">
+                    Ciclo #-- | --:--:--
+                </span>
             </div>
         </div>
 
-        <!-- Tab: Alarmes -->
+        <!-- Tab 1: Tendência (Gráfico com altura estendida para mobile) -->
+        <div id="tab-trend" class="app-tab active">
+            <div class="glass-panel" style="padding: 16px; display: flex; flex-direction: column;">
+                <div class="chart-header">
+                    <span>Tendência Contínua</span>
+                    <span class="chart-live"><div class="led-indicator led-green"></div> AO VIVO</span>
+                </div>
+                <div class="main-chart-wrapper" style="height: 60vh;">
+                    <canvas id="mainTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Variáveis (Cards Isolados) -->
+        <div id="tab-vars" class="app-tab">
+            <div class="cards-grid" id="cards-container">
+                <div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">
+                    A aguardar sincronização de telemetria da fábrica...
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Alarmes -->
         <div id="tab-alarms" class="app-tab">
             <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
                 <h3 style="font-size: 18px;">Registo de Eventos</h3>
@@ -387,7 +320,7 @@
             </div>
         </div>
 
-        <!-- Tab: Configurações -->
+        <!-- Tab 4: Configurações -->
         <div id="tab-settings" class="app-tab">
             <div class="glass-panel" style="padding: 32px; max-width: 500px; margin: 0 auto;">
                 <h3 style="margin-bottom: 24px; font-size: 18px;">Definições de Conta</h3>
@@ -402,15 +335,19 @@
                 </div>
 
                 <button class="btn-primary btn-ghost" onclick="desvincularPlanta()" style="color: var(--warning); border-color: var(--border-color);">Trocar de Equipamento</button>
-                <button class="btn-primary btn-ghost" onclick="logout()" style="color: var(--error); border-color: var(--border-color);">Terminar Sessão</button>
+                <button class="btn-primary btn-ghost" onclick="logout()" style="color: var(--error); border-color: var(--border-color); margin-top: 16px;">Terminar Sessão</button>
             </div>
         </div>
 
-        <!-- Bottom Navigation -->
+        <!-- 🧭 BOTTOM NAVIGATION COM 4 ITENS -->
         <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('dashboard', this)">
+            <div class="nav-item active" onclick="switchTab('trend', this)">
                 <div class="nav-icon">📈</div>
-                <div class="nav-text">PROCESSO</div>
+                <div class="nav-text">TENDÊNCIA</div>
+            </div>
+            <div class="nav-item" onclick="switchTab('vars', this)">
+                <div class="nav-icon">🎛️</div>
+                <div class="nav-text">VARIÁVEIS</div>
             </div>
             <div class="nav-item" onclick="switchTab('alarms', this)" style="position: relative;">
                 <div class="nav-icon">⚠️</div>
@@ -446,7 +383,7 @@
         if (firebase.messaging.isSupported()) {
             messaging = firebase.messaging();
             
-            // CORREÇÃO: REGISTO OBRIGATÓRIO DO SERVICE WORKER
+            // REGISTO OBRIGATÓRIO DO SERVICE WORKER PARA MOBILE PUSH NOTIFICATIONS
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/firebase-messaging-sw.js')
                 .then(function(reg) {
@@ -461,15 +398,14 @@
         
         // Configuração Global do Gráfico Único
         let mainChartInstance = null;
-        const TIME_WINDOW_MS = 60 * 60 * 1000; // 1 Hora em milissegundos
-        const MAX_SAFE_POINTS = 7200; // Proteção estendida
+        const TIME_WINDOW_MS = 60 * 60 * 1000; // 1 Hora
+        const MAX_SAFE_POINTS = 7200; 
         let globalChartLabels = [];
-        let globalChartTimestamps = []; // Novo array para controlo exato do tempo
-        let tagDatasets = {}; // Mapeia tag_name -> config do dataset
+        let globalChartTimestamps = []; 
+        let tagDatasets = {}; 
         let cycleCount = 0;
-        let lastChartUpdateMs = 0; // Controle de taxa de atualização (Throttle)
+        let lastChartUpdateMs = 0; 
 
-        // Paleta de cores premium para as linhas/cards (como na imagem)
         const TAG_COLORS = ['#00E676', '#00BCD4', '#FF9800', '#9C27B0', '#FDD835', '#F44336', '#3b82f6'];
         let colorIndex = 0;
 
@@ -485,6 +421,11 @@
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
             if(tabName === 'alarms') document.getElementById('alarm-badge').style.display = 'none';
+            
+            // Força o redimensionamento do gráfico quando a aba ganha foco
+            if(tabName === 'trend' && mainChartInstance) {
+                mainChartInstance.resize();
+            }
         }
 
         // ═══════════════════ AUTENTICAÇÃO ═══════════════════
@@ -574,12 +515,12 @@
                 type: 'line',
                 data: {
                     labels: globalChartLabels,
-                    datasets: [] // Preenchido dinamicamente
+                    datasets: [] 
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 0 }, // Para não travar no SCADA
+                    animation: { duration: 0 }, 
                     interaction: {
                         mode: 'index',
                         intersect: false,
@@ -605,15 +546,18 @@
             const dashboardContainer = document.getElementById('cards-container');
             const lblStatus = document.getElementById('lbl-status-text');
             const ledStatus = document.getElementById('led-status');
+            const lblCycle = document.getElementById('lbl-cycle-time');
+            const lblAlarms = document.getElementById('lbl-alarm-count');
+            const alarmCountText = document.getElementById('alarm-count-text');
             
             // LER STATUS ONLINE
             dbRef.ref('plants/' + plantId + '/online').on('value', (snap) => {
                 const isOnline = snap.val();
                 if (isOnline) {
-                    lblStatus.innerText = "ONLINE - COMUNICAÇÃO ATIVA";
+                    lblStatus.innerText = "ONLINE - ATIVO";
                     ledStatus.className = "led-indicator led-green";
                 } else {
-                    lblStatus.innerText = "OFFLINE - SEM CONEXÃO";
+                    lblStatus.innerText = "OFFLINE";
                     ledStatus.className = "led-indicator led-red";
                 }
             });
@@ -622,7 +566,7 @@
             dbRef.ref('plants/' + plantId + '/tags').on('value', (snap) => {
                 const tags = snap.val();
                 
-                // 1. SE A BASE DE DADOS FOI APAGADA (WIPE COMPLETO)
+                // SE A BASE DE DADOS FOI APAGADA (WIPE)
                 if (!tags) {
                     dashboardContainer.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 40px; color: var(--text-muted);">A aguardar sincronização de telemetria da fábrica...</div>';
                     tagDatasets = {};
@@ -633,8 +577,8 @@
                         mainChartInstance.data.datasets = [];
                         mainChartInstance.update();
                     }
-                    document.getElementById('lbl-cycle-time').innerText = `Ciclo #-- | --:--:--`;
-                    document.getElementById('lbl-alarm-count').style.display = 'none';
+                    lblCycle.innerText = `Ciclo #-- | --:--:--`;
+                    lblAlarms.style.display = 'none';
                     return;
                 }
                 
@@ -644,9 +588,8 @@
                 const now = new Date();
                 const agoraMs = now.getTime();
                 const timeStr = now.toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-                document.getElementById('lbl-cycle-time').innerText = `Ciclo #${cycleCount} | ${timeStr}`;
+                lblCycle.innerText = `Ciclo #${cycleCount} | ${timeStr}`;
 
-                // Throttle: Limita a inserção de pontos no gráfico a 1 por segundo.
                 const canUpdateChart = (agoraMs - lastChartUpdateMs) >= 1000;
 
                 if (canUpdateChart) {
@@ -656,19 +599,15 @@
                 }
 
                 let activeAlarmsCount = 0;
-                
-                // Mapeia quais tags vieram neste ciclo
                 const tagsDesteCiclo = new Set(Object.keys(tags));
 
-                // === 2. LIMPEZA ATIVA DE TAGS QUE FORAM REMOVIDAS (O FIM DO CACHE FANTASMA) ===
+                // LIMPEZA DE TAGS REMOVIDAS
                 for (const existingTagName in tagDatasets) {
                     if (!tagsDesteCiclo.has(existingTagName)) {
-                        // Remove Card HTML
                         let id = "card_" + existingTagName.replace(/[^a-zA-Z0-9]/g, "_");
                         let card = document.getElementById(id);
                         if (card) card.remove();
                         
-                        // Remove Dataset do Gráfico
                         const displayTitle = existingTagName.replace(/_/g, " ");
                         const dsIndex = mainChartInstance.data.datasets.findIndex(ds => ds.label.includes(displayTitle));
                         if (dsIndex !== -1) {
@@ -695,19 +634,14 @@
                     
                     let displayTitle = tagName.replace(/_/g, " ");
 
-                    // Criação do Dataset no Gráfico (Se for uma Tag nova)
                     if (!tagDatasets[tagName]) {
                         const assignedColor = TAG_COLORS[colorIndex % TAG_COLORS.length];
                         colorIndex++;
                         
-                        // Corrige o alinhamento de acordo com o estado do Throttle
                         const padLen = canUpdateChart ? Math.max(0, globalChartLabels.length - 1) : globalChartLabels.length;
                         const paddingArray = new Array(padLen).fill(null);
                         
-                        tagDatasets[tagName] = {
-                            color: assignedColor,
-                            dataArray: paddingArray
-                        };
+                        tagDatasets[tagName] = { color: assignedColor, dataArray: paddingArray };
                         
                         mainChartInstance.data.datasets.push({
                             label: `${displayTitle} (${unit})`,
@@ -721,7 +655,6 @@
                         });
                     }
 
-                    // Construir Card se não existir
                     if (!card) {
                         card = document.createElement("div");
                         card.className = "scada-card";
@@ -748,10 +681,8 @@
                         dashboardContainer.appendChild(card);
                     }
 
-                    // Atualizar Valores no DOM do Card
                     document.getElementById(id + "_val").innerText = Number(val).toFixed(2);
                     
-                    // Tratamento visual de Alarme no Card
                     const rangeEl = document.getElementById(id + "_range");
                     const ledEl = document.getElementById(id + "_led");
                     
@@ -773,7 +704,6 @@
                         }
                     }
 
-                    // Totalizador
                     const totalEl = document.getElementById(id + "_total");
                     if (total !== null) {
                         totalEl.innerText = `Total: ${Number(total).toFixed(2)} ${unit}`;
@@ -783,20 +713,16 @@
                 }
 
                 if (canUpdateChart) {
-                    // Sincroniza e insere todos os valores no Gráfico
                     for (const tagName in tagDatasets) {
                         if (tagsDesteCiclo.has(tagName)) {
                             let data = tags[tagName];
                             let val = typeof data === 'object' ? (data.value || 0) : data;
                             tagDatasets[tagName].dataArray.push(val);
                         } else {
-                            // Se a tag não foi enviada neste ciclo, preenchemos com null para o gráfico não dessincronizar
                             tagDatasets[tagName].dataArray.push(null);
                         }
                     }
 
-                    // ─── JANELA DE TEMPO (1 HORA) ───
-                    // Limpa pontos antigos calculando a diferença entre o tempo real de agora e do ponto inserido.
                     const limiteDeTempo = agoraMs - TIME_WINDOW_MS;
                     
                     while (globalChartTimestamps.length > 0 && 
@@ -810,24 +736,20 @@
                         }
                     }
                     
-                    // Redesenha o Gráfico Único
                     mainChartInstance.update();
                 }
 
-                // Atualiza rodapé de alarmes
-                const lblAlarms = document.getElementById('lbl-alarm-count');
+                // Atualiza contagem de alarmes no painel global do topo
                 if(activeAlarmsCount > 0) {
                     lblAlarms.style.display = 'flex';
-                    lblAlarms.querySelector('span').innerText = `${activeAlarmsCount} ALERTA${activeAlarmsCount > 1 ? 'S' : ''}`;
+                    alarmCountText.innerText = `${activeAlarmsCount} ALERTA${activeAlarmsCount > 1 ? 'S' : ''}`;
                 } else {
                     lblAlarms.style.display = 'none';
                 }
 
-                // Redesenha o Gráfico Único
                 mainChartInstance.update();
             });
 
-            // LER ALARMES (Para a Tab de Registos)
             dbRef.ref('alarms/' + plantId).orderByChild('timestamp').limitToLast(20).on('value', (snap) => {
                 const list = document.getElementById('alarms-list');
                 if (snap.exists()) {
@@ -856,9 +778,7 @@
             }
         }
         
-        function pararMonitoramento() {
-            // Lógica de paragem de listeners se necessário futuramente
-        }
+        function pararMonitoramento() {}
     </script>
 </body>
 </html>
